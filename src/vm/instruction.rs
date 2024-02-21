@@ -16,34 +16,34 @@
 */
 
 use super::opcodes::OPCODES;
-const SIZE_A: isize = 8;
-const SIZE_B: isize = 8;
-const SIZE_C: isize = 8;
-const SIZE_K: isize = 1;
-const SIZE_BX: isize = SIZE_B + SIZE_C + SIZE_K;
-const SIZE_AX: isize = SIZE_BX + SIZE_A;
-const SIZE_SJ: isize = SIZE_BX + SIZE_A;
-const SIZE_OP: isize = 7;
+pub const SIZE_A: isize = 8;
+pub const SIZE_B: isize = 8;
+pub const SIZE_C: isize = 8;
+pub const SIZE_K: isize = 1;
+pub const SIZE_BX: isize = SIZE_B + SIZE_C + SIZE_K;
+pub const SIZE_AX: isize = SIZE_BX + SIZE_A;
+pub const SIZE_SJ: isize = SIZE_BX + SIZE_A;
+pub const SIZE_OP: isize = 7;
 
-const POS_OP: isize = 0;
-const POS_A: isize = POS_OP + SIZE_OP;
-const POS_K: isize = POS_A + SIZE_A;
-const POS_B: isize = POS_K + SIZE_K;
-const POS_C: isize = POS_B + SIZE_B;
-const POS_BX: isize = POS_K;
-const POS_AX: isize = POS_A;
-const POS_SJ: isize = POS_A;
+pub const POS_OP: isize = 0;
+pub const POS_A: isize = POS_OP + SIZE_OP;
+pub const POS_K: isize = POS_A + SIZE_A;
+pub const POS_B: isize = POS_K + SIZE_K;
+pub const POS_C: isize = POS_B + SIZE_B;
+pub const POS_BX: isize = POS_K;
+pub const POS_AX: isize = POS_A;
+pub const POS_SJ: isize = POS_A;
 
-const MAXARG_A: isize = (1 << SIZE_A) - 1;
-const MAXARG_B: isize = (1 << SIZE_B) - 1;
-const MAXARG_C: isize = (1 << SIZE_C) - 1;
-const MAXARG_K: isize = (1 << SIZE_K) - 1;
-const MAXARG_BX: isize = (1 << SIZE_BX) - 1;
-const MAXARG_AX: isize = (1 << SIZE_AX) - 1;
-const OFFSET_SB: isize = MAXARG_B >> 1;
-const OFFSET_SC: isize = MAXARG_C >> 1;
-const OFFSET_SBX: isize = MAXARG_BX >> 1;
-const OFFSET_SJ: isize = ((1 << SIZE_SJ) - 1) >> 1;
+pub const MAXARG_A: isize = (1 << SIZE_A) - 1;
+pub const MAXARG_B: isize = (1 << SIZE_B) - 1;
+pub const MAXARG_C: isize = (1 << SIZE_C) - 1;
+pub const MAXARG_K: isize = (1 << SIZE_K) - 1;
+pub const MAXARG_BX: isize = (1 << SIZE_BX) - 1;
+pub const MAXARG_AX: isize = (1 << SIZE_AX) - 1;
+pub const OFFSET_SB: isize = MAXARG_B >> 1;
+pub const OFFSET_SC: isize = MAXARG_C >> 1;
+pub const OFFSET_SBX: isize = MAXARG_BX >> 1;
+pub const OFFSET_SJ: isize = ((1 << SIZE_SJ) - 1) >> 1;
 
 pub trait Instruction {
     fn opname(self) -> &'static str;
