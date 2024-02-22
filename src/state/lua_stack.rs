@@ -124,8 +124,8 @@ mod tests {
         stack.push(LuaValue::Number(2.0));
         stack.push(LuaValue::Number(3.0));
         stack.reverse(0, 2);
-        assert_eq!(stack.get(0), LuaValue::Number(3.0));
-        assert_eq!(stack.get(1), LuaValue::Number(2.0));
-        assert_eq!(stack.get(2), LuaValue::Number(1.0));
+        assert_eq!(stack.get(1), LuaValue::Number(3.0));
+        assert_eq!(stack.get(2), LuaValue::Number(2.0));
+        assert_eq!(stack.get(3), LuaValue::Number(1.0));
     }
 }
