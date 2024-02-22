@@ -1,4 +1,4 @@
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 #[allow(dead_code)]
 #[repr(i8)]
 pub enum Type {
@@ -15,7 +15,7 @@ pub enum Type {
     NumTypes = 0x09,
     Proto = Type::NumTypes as i8 + 1,
     DeadKey = Type::NumTypes as i8 + 2,
-    OtalTypes = Type::Proto as i8 + 2,
+    TolalTypes = Type::Proto as i8 + 2,
 }
 
 #[allow(dead_code)]
@@ -35,7 +35,7 @@ impl Type {
             0x09 => Some(Type::NumTypes),
             0x0A => Some(Type::Proto),
             0x0B => Some(Type::DeadKey),
-            0x0C => Some(Type::OtalTypes),
+            0x0C => Some(Type::TolalTypes),
             _ => panic!("unexpected Type value: {value:?}"),
         }
     }

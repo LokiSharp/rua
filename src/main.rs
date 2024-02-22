@@ -10,7 +10,9 @@ use Constant::*;
 
 use crate::vm::instruction::MAXARG_C;
 
+mod api;
 mod binary;
+mod state;
 mod vm;
 
 fn main() -> io::Result<()> {
