@@ -1,4 +1,4 @@
-use crate::binary::object::Type;
+use crate::api::r#type::Type;
 
 #[derive(Clone, Debug, PartialEq)]
 #[allow(dead_code)]

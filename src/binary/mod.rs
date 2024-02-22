@@ -1,5 +1,4 @@
 pub mod chunk;
-pub mod object;
 mod reader;
 
 pub fn undump(data: Vec<u8>) -> chunk::Prototype {

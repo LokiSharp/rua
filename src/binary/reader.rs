@@ -1,6 +1,6 @@
 use crate::binary::chunk;
 
-use super::object::VType;
+use crate::api::r#type::VType;
 
 pub struct Reader {
     data: Vec<u8>,

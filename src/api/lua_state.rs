@@ -37,4 +37,8 @@ pub trait LuaState {
     fn push_integer(&mut self, n: i64);
     fn push_number(&mut self, n: f64);
     fn push_string(&mut self, s: String);
+    fn arith(&mut self, op: u8);
+    fn compare(&mut self, idx1: isize, idx2: isize, op: u8) -> bool;
+    fn len(&mut self, idx: isize);
+    fn concat(&mut self, n: isize);
 }
