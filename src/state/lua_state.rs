@@ -481,18 +481,18 @@ mod tests {
         ls.push_boolean(x);
         print_stack(&ls);
     }
-}
 
-fn print_stack(ls: &LuaState) {
-    let top = ls.get_top();
-    for i in 1..top + 1 {
-        let t = ls.type_id(i);
-        match Type::from_i8(t) {
-            Some(Type::Boolean) => print!("[{}]", ls.to_boolean(i)),
-            Some(Type::Number) => print!("[{}]", ls.to_number(i)),
-            Some(Type::String) => print!("[{:?}]", ls.to_string(i)),
-            _ => print!("[{}]", ls.type_name(t)), // other values
+    fn print_stack(ls: &LuaState) {
+        let top = ls.get_top();
+        for i in 1..top + 1 {
+            let t = ls.type_id(i);
+            match Type::from_i8(t) {
+                Some(Type::Boolean) => print!("[{}]", ls.to_boolean(i)),
+                Some(Type::Number) => print!("[{}]", ls.to_number(i)),
+                Some(Type::String) => print!("[{:?}]", ls.to_string(i)),
+                _ => print!("[{}]", ls.type_name(t)), // other values
+            }
         }
+        println!("");
     }
-    println!("");
 }

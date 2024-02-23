@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub enum ArithOp {
     ADD,
     SUB,
@@ -15,6 +16,7 @@ pub enum ArithOp {
     BNOT,
 }
 
+#[allow(dead_code)]
 impl ArithOp {
     pub fn from_u8(value: u8) -> Option<ArithOp> {
         match value {

@@ -24,14 +24,6 @@ fn fmul(a: f64, b: f64) -> f64 {
     a * b
 }
 
-fn idiv(a: i64, b: i64) -> i64 {
-    a / b
-}
-
-fn fdiv(a: f64, b: f64) -> f64 {
-    a / b
-}
-
 fn imod(a: i64, b: i64) -> i64 {
     super::math::i_mod(a, b)
 }
