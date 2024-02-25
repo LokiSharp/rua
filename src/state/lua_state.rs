@@ -7,10 +7,11 @@ use crate::{
 use super::{lua_stack::LuaStack, lua_value::LuaValue};
 
 /// `LuaState` 是一个用于表示 Lua 状态的结构体。
+#[derive(Debug)]
 pub struct LuaState {
-    stack: LuaStack,
-    proto: Prototype,
-    pc: isize,
+    pub(crate) stack: LuaStack,
+    pub(crate) proto: Prototype,
+    pub(crate) pc: isize,
 }
 
 impl LuaState {
