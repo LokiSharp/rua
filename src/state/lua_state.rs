@@ -1,6 +1,6 @@
 use crate::{
-    api::{op::ArithOp, r#type::Type, LuaAPI},
-    binary::chunk::Prototype,
+    api::{op::ArithOp, r#type::Type, LuaAPI, LuaVM},
+    binary::chunk::{Constant, Prototype},
     state::arith_ops::arith,
 };
 
@@ -20,6 +20,51 @@ impl LuaState {
             stack: LuaStack::new(stack_size),
             proto,
             pc: 0,
+        }
+    }
+}
+
+impl LuaVM for LuaState {
+    /// 获取当前的程序计数器（pc）的值。
+    fn pc(&self) -> isize {
+        self.pc
+    }
+
+    /// 将程序计数器（pc）增加指定的值。
+    fn add_pc(&mut self, n: isize) {
+        self.pc += n;
+    }
+
+    /// 获取当前程序计数器（pc）指向的指令，并将程序计数器（pc）向前移动一位。
+    fn fetch(&mut self) -> u32 {
+        let i = self.proto.code[self.pc as usize];
+        self.pc += 1;
+        i
+    }
+
+    /// 获取指定索引的常量，并将其推送到栈顶。
+    fn get_const(&mut self, idx: isize) {
+        let c = &self.proto.constants[idx as usize];
+        let val = match c {
+            Constant::Nil => LuaValue::Nil,
+            Constant::Boolean(b) => LuaValue::Boolean(*b),
+            Constant::Integer(i) => LuaValue::Integer(*i),
+            Constant::Number(n) => LuaValue::Number(*n),
+            Constant::Str(s) => LuaValue::Str((*s).clone()),
+        };
+        self.stack.push(val);
+    }
+
+    /// 获取指定的 RK 值。
+    ///
+    /// 如果 RK 值大于 0xFF，那么它是一个常量索引，此时将获取该常量并推送到栈顶；
+    /// 否则，它是一个寄存器索引，此时将推送该寄存器的值到栈顶。
+    ///
+    fn get_rk(&mut self, rk: isize) {
+        if rk > 0xFF {
+            self.get_const(rk & 0xFF);
+        } else {
+            self.push_value(rk + 1);
         }
     }
 }
@@ -541,5 +586,28 @@ mod tests {
             }
         }
         println!("");
+    }
+
+    #[test]
+    fn test_lua_state_new() {
+        let proto = Prototype::default();
+        let lua_state = LuaState::new(10, proto);
+        assert_eq!(lua_state.pc, 0);
+        assert_eq!(lua_state.stack.top(), 0);
+    }
+
+    #[test]
+    fn test_lua_state_pc() {
+        let proto = Prototype::default();
+        let lua_state = LuaState::new(10, proto);
+        assert_eq!(lua_state.pc(), 0);
+    }
+
+    #[test]
+    fn test_lua_state_add_pc() {
+        let proto = Prototype::default();
+        let mut lua_state = LuaState::new(10, proto);
+        lua_state.add_pc(5);
+        assert_eq!(lua_state.pc(), 5);
     }
 }
