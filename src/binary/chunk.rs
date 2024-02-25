@@ -31,7 +31,7 @@ pub struct Header {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Prototype {
     pub source: Option<String>, // debug
     pub line_defined: usize,

@@ -1,32 +1,40 @@
 use super::lua_value::LuaValue;
 
+/// `LuaStack` 是一个用于操作 Lua 栈的结构体。
+#[derive(Debug)]
 pub struct LuaStack {
     vec: Vec<LuaValue>,
 }
 
 impl LuaStack {
+    /// 创建一个新的 `LuaStack`，预分配指定大小的空间。
     pub fn new(size: usize) -> Self {
         LuaStack {
             vec: Vec::with_capacity(size),
         }
     }
 
+    /// 获取栈顶的索引。
     pub fn top(&self) -> isize {
         self.vec.len() as isize
     }
 
+    /// 检查栈是否有足够的空间来存储 `n` 个元素，如果没有则分配更多的空间。
     pub fn check(&mut self, n: usize) {
         self.vec.reserve(n);
     }
 
+    /// 将一个值推送到栈顶。
     pub fn push(&mut self, val: LuaValue) {
         self.vec.push(val);
     }
 
+    /// 从栈顶弹出一个值。
     pub fn pop(&mut self) -> LuaValue {
         self.vec.pop().unwrap()
     }
 
+    /// 将一个相对索引转换为绝对索引。
     pub fn abs_index(&self, idx: isize) -> isize {
         if idx >= 0 {
             idx
@@ -35,11 +43,13 @@ impl LuaStack {
         }
     }
 
+    /// 检查一个索引是否有效。
     pub fn is_valid(&self, idx: isize) -> bool {
         let abs_idx = self.abs_index(idx);
         abs_idx > 0 && abs_idx <= self.top()
     }
 
+    /// 获取指定索引的值。
     pub fn get(&self, idx: isize) -> LuaValue {
         let abs_idx = self.abs_index(idx);
         if abs_idx > 0 && abs_idx <= self.top() {
@@ -50,6 +60,7 @@ impl LuaStack {
         }
     }
 
+    /// 设置指定索引的值。
     pub fn set(&mut self, idx: isize, val: LuaValue) {
         let abs_idx = self.abs_index(idx);
         if abs_idx > 0 && abs_idx <= self.top() {
@@ -60,6 +71,7 @@ impl LuaStack {
         }
     }
 
+    /// 反转栈中从 `from` 到 `to` 的元素。
     pub fn reverse(&mut self, mut from: usize, mut to: usize) {
         while from < to {
             self.vec.swap(from, to);

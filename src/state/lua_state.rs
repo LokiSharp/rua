@@ -1,66 +1,83 @@
 use crate::{
     api::{op::ArithOp, r#type::Type, LuaAPI},
+    binary::chunk::Prototype,
     state::arith_ops::arith,
 };
 
 use super::{lua_stack::LuaStack, lua_value::LuaValue};
 
+/// `LuaState` 是一个用于表示 Lua 状态的结构体。
 pub struct LuaState {
     stack: LuaStack,
+    proto: Prototype,
+    pc: isize,
 }
 
 impl LuaState {
-    pub fn new() -> LuaState {
+    /// 创建一个新的 `LuaState`，预分配指定大小的栈空间，并设置初始的 `proto` 和 `pc`。
+    pub fn new(stack_size: usize, proto: Prototype) -> LuaState {
         LuaState {
-            stack: LuaStack::new(20),
+            stack: LuaStack::new(stack_size),
+            proto,
+            pc: 0,
         }
     }
 }
 
 impl LuaAPI for LuaState {
+    /// 获取栈顶的索引。
     fn get_top(&self) -> isize {
         self.stack.top()
     }
 
+    /// 将一个相对索引转换为绝对索引。
     fn abs_index(&self, idx: isize) -> isize {
         self.stack.abs_index(idx)
     }
 
+    /// 检查栈是否有足够的空间来存储 `n` 个元素，如果没有则分配更多的空间。
     fn check_stack(&mut self, n: usize) -> bool {
         self.stack.check(n);
         true
     }
 
+    /// 从栈顶弹出 `n` 个值。
     fn pop(&mut self, n: usize) {
         for _ in 0..n {
             self.stack.pop();
         }
     }
 
+    /// 将 `from_idx` 索引处的值复制到 `to_idx` 索引处。
     fn copy(&mut self, from_idx: isize, to_idx: isize) {
         let val = self.stack.get(from_idx);
         self.stack.set(to_idx, val);
     }
 
+    /// 将 `idx` 索引处的值推送到栈顶。
     fn push_value(&mut self, idx: isize) {
         let val = self.stack.get(idx);
         self.stack.push(val);
     }
 
+    /// 用栈顶的值替换 `idx` 索引处的值。
     fn replace(&mut self, idx: isize) {
         let val = self.stack.pop();
         self.stack.set(idx, val);
     }
 
+    /// 在 `idx` 索引处插入一个值，该值是栈顶的值。
     fn insert(&mut self, idx: isize) {
         self.rotate(idx, 1);
     }
 
+    /// 移除 `idx` 索引处的值。
     fn remove(&mut self, idx: isize) {
         self.rotate(idx, -1);
         self.pop(1);
     }
 
+    /// 旋转栈中从 `idx` 开始的 `n` 个元素。
     fn rotate(&mut self, idx: isize, n: isize) {
         let abs_idx = self.stack.abs_index(idx);
         if abs_idx < 0 || !self.stack.is_valid(abs_idx) {
@@ -75,6 +92,7 @@ impl LuaAPI for LuaState {
         self.stack.reverse(p as usize, t as usize); /* reverse the entire segment */
     }
 
+    /// 设置栈顶的索引。
     fn set_top(&mut self, idx: isize) {
         let new_top = self.stack.abs_index(idx);
         if new_top < 0 {
@@ -93,6 +111,7 @@ impl LuaAPI for LuaState {
         }
     }
 
+    /// 获取 `tp` 类型的名称。
     fn type_name(&self, tp: i8) -> &str {
         match Type::from_i8(tp) {
             Some(Type::None) => "no value",
@@ -113,30 +132,37 @@ impl LuaAPI for LuaState {
         }
     }
 
+    /// 获取 `idx` 索引处的值的类型 ID。
     fn type_id(&self, idx: isize) -> i8 {
         if self.stack.is_valid(idx) {
-            self.stack.get(idx).type_id()
+            let i = self.stack.get(idx);
+            i.type_id()
         } else {
             Type::None as i8
         }
     }
 
+    /// 检查 `idx` 索引处的值是否为 `None` 类型。
     fn is_none(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::None as i8
     }
 
+    /// 检查 `idx` 索引处的值是否为 `Nil` 类型。
     fn is_nil(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::Nil as i8
     }
 
+    /// 检查 `idx` 索引处的值是否为 `None` 或 `Nil` 类型。
     fn is_none_or_nil(&self, idx: isize) -> bool {
         self.is_none(idx) || self.is_nil(idx)
     }
 
+    /// 检查 `idx` 索引处的值是否为布尔类型。
     fn is_boolean(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::Boolean as i8
     }
 
+    /// 检查 `idx` 索引处的值是否为整数类型。
     fn is_integer(&self, idx: isize) -> bool {
         match self.stack.get(idx) {
             LuaValue::Integer(_) => true,
@@ -144,35 +170,43 @@ impl LuaAPI for LuaState {
         }
     }
 
+    /// 检查 `idx` 索引处的值是否为数字类型。
     fn is_number(&self, idx: isize) -> bool {
         self.to_numberx(idx).is_some()
     }
 
+    /// 检查 `idx` 索引处的值是否为字符串类型。
     fn is_string(&self, idx: isize) -> bool {
         let t = self.type_id(idx);
         t == Type::String as i8 || t == Type::Number as i8
     }
 
+    /// 检查 `idx` 索引处的值是否为表类型。
     fn is_table(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::Table as i8
     }
 
+    /// 检查 `idx` 索引处的值是否为线程类型。
     fn is_thread(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::Thread as i8
     }
 
+    /// 检查 `idx` 索引处的值是否为函数类型。
     fn is_function(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::Function as i8
     }
 
+    /// 将 `idx` 索引处的值转换为布尔值。
     fn to_boolean(&self, idx: isize) -> bool {
         self.stack.get(idx).to_boolean()
     }
 
+    /// 将 `idx` 索引处的值转换为整数。
     fn to_integer(&self, idx: isize) -> i64 {
         self.to_integerx(idx).unwrap()
     }
 
+    /// 尝试将 `idx` 索引处的值转换为整数，如果转换失败则返回 `None`。
     fn to_integerx(&self, idx: isize) -> Option<i64> {
         match self.stack.get(idx) {
             LuaValue::Integer(n) => Some(n),
@@ -180,10 +214,12 @@ impl LuaAPI for LuaState {
         }
     }
 
+    /// 将 `idx` 索引处的值转换为数字。
     fn to_number(&self, idx: isize) -> f64 {
         self.to_numberx(idx).unwrap()
     }
 
+    /// 尝试将 `idx` 索引处的值转换为数字，如果转换失败则返回 `None`。
     fn to_numberx(&self, idx: isize) -> Option<f64> {
         match self.stack.get(idx) {
             LuaValue::Number(n) => Some(n),
@@ -192,10 +228,12 @@ impl LuaAPI for LuaState {
         }
     }
 
+    /// 将 `idx` 索引处的值转换为字符串。
     fn to_string(&self, idx: isize) -> String {
         self.to_stringx(idx).unwrap()
     }
 
+    /// 尝试将 `idx` 索引处的值转换为字符串，如果转换失败则返回 `None`。
     fn to_stringx(&self, idx: isize) -> Option<String> {
         match self.stack.get(idx) {
             LuaValue::Str(s) => Some(s),
@@ -205,26 +243,32 @@ impl LuaAPI for LuaState {
         }
     }
 
+    /// 将一个 `Nil` 值推送到栈顶。
     fn push_nil(&mut self) {
         self.stack.push(LuaValue::Nil);
     }
 
+    /// 将一个布尔值推送到栈顶。
     fn push_boolean(&mut self, b: bool) {
         self.stack.push(LuaValue::Boolean(b));
     }
 
+    /// 将一个整数推送到栈顶。
     fn push_integer(&mut self, n: i64) {
         self.stack.push(LuaValue::Integer(n));
     }
 
+    /// 将一个数字推送到栈顶。
     fn push_number(&mut self, n: f64) {
         self.stack.push(LuaValue::Number(n));
     }
 
+    /// 将一个字符串推送到栈顶。
     fn push_string(&mut self, s: String) {
         self.stack.push(LuaValue::Str(s));
     }
 
+    /// 对栈顶的两个元素进行算术运算，并将结果推送到栈顶。
     fn arith(&mut self, op: u8) {
         if op != ArithOp::UNM as u8 && op != ArithOp::BNOT as u8 {
             let b = self.stack.pop();
@@ -243,6 +287,7 @@ impl LuaAPI for LuaState {
         panic!("arithmetic error!");
     }
 
+    /// 比较 `idx1` 和 `idx2` 索引处的两个值。
     fn compare(&mut self, idx1: isize, idx2: isize, op: u8) -> bool {
         if !self.stack.is_valid(idx1) || !self.stack.is_valid(idx2) {
             return false;
@@ -256,6 +301,7 @@ impl LuaAPI for LuaState {
         }
     }
 
+    /// 获取 `idx` 索引处的值的长度。
     fn len(&mut self, idx: isize) {
         let val = self.stack.get(idx);
         match val {
@@ -264,6 +310,7 @@ impl LuaAPI for LuaState {
         }
     }
 
+    /// 连接栈顶的 `n` 个字符串，并将结果推送到栈顶。
     fn concat(&mut self, n: isize) {
         if n == 0 {
             self.stack.push(LuaValue::Str("".to_string()));
@@ -292,7 +339,7 @@ mod tests {
 
     #[test]
     fn test_is_none_or_nil() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_nil();
         assert_eq!(lua_state.is_none_or_nil(lua_state.get_top()), true);
         lua_state.push_boolean(false);
@@ -301,7 +348,7 @@ mod tests {
 
     #[test]
     fn test_is_boolean() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_nil();
         assert_eq!(lua_state.is_boolean(lua_state.get_top()), false);
         lua_state.push_boolean(false);
@@ -310,7 +357,7 @@ mod tests {
 
     #[test]
     fn test_is_integer() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_nil();
         assert_eq!(lua_state.is_integer(lua_state.get_top()), false);
         lua_state.push_integer(1);
@@ -319,7 +366,7 @@ mod tests {
 
     #[test]
     fn test_is_number() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_nil();
         assert_eq!(lua_state.is_number(lua_state.get_top()), false);
         lua_state.push_number(1 as f64);
@@ -328,7 +375,7 @@ mod tests {
 
     #[test]
     fn test_is_string() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_nil();
         assert_eq!(lua_state.is_string(lua_state.get_top()), false);
         lua_state.push_string("hello".to_string());
@@ -337,7 +384,7 @@ mod tests {
 
     #[test]
     fn test_to_boolean() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_boolean(false);
         assert_eq!(lua_state.to_boolean(lua_state.get_top()), false);
         lua_state.push_boolean(true);
@@ -346,14 +393,14 @@ mod tests {
 
     #[test]
     fn test_to_integer() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_integer(1);
         assert_eq!(lua_state.to_integer(lua_state.get_top()), 1);
     }
 
     #[test]
     fn test_to_integerx() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_integer(1);
         assert_eq!(lua_state.to_integerx(lua_state.get_top()), Some(1));
         lua_state.push_integer(2);
@@ -364,14 +411,14 @@ mod tests {
 
     #[test]
     fn test_to_number() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_number(1 as f64);
         assert_eq!(lua_state.to_number(lua_state.get_top()), 1 as f64);
     }
 
     #[test]
     fn test_to_numberx() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_number(1 as f64);
         assert_eq!(lua_state.to_numberx(lua_state.get_top()), Some(1 as f64));
         lua_state.push_number(2 as f64);
@@ -382,14 +429,14 @@ mod tests {
 
     #[test]
     fn test_to_string() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_string("hello".to_string());
         assert_eq!(lua_state.to_string(lua_state.get_top()), "hello");
     }
 
     #[test]
     fn test_to_stringx() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_string("hello".to_string());
         assert_eq!(
             lua_state.to_stringx(lua_state.get_top()),
@@ -401,42 +448,42 @@ mod tests {
 
     #[test]
     fn test_push_nil() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_nil();
         assert_eq!(lua_state.type_id(lua_state.get_top()), Type::Nil as i8);
     }
 
     #[test]
     fn test_push_boolean() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_boolean(true);
         assert_eq!(lua_state.type_id(lua_state.get_top()), Type::Boolean as i8);
     }
 
     #[test]
     fn test_push_integer() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_integer(42);
         assert_eq!(lua_state.type_id(lua_state.get_top()), Type::Number as i8);
     }
 
     #[test]
     fn test_push_number() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_number(3.14);
         assert_eq!(lua_state.type_id(lua_state.get_top()), Type::Number as i8);
     }
 
     #[test]
     fn test_push_string() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_string("hello".to_string());
         assert_eq!(lua_state.type_id(lua_state.get_top()), Type::String as i8);
     }
 
     #[test]
     fn test_arith() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_integer(1);
         lua_state.push_integer(2);
         lua_state.arith(ArithOp::ADD as u8);
@@ -445,7 +492,7 @@ mod tests {
 
     #[test]
     fn test_compare() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_integer(1);
         lua_state.push_integer(2);
         assert_eq!(lua_state.compare(-1, -2, 0), false);
@@ -453,7 +500,7 @@ mod tests {
 
     #[test]
     fn test_len() {
-        let mut lua_state = LuaState::new();
+        let mut lua_state = LuaState::new(20, Prototype::default());
         lua_state.push_string("hello".to_string());
         lua_state.len(lua_state.get_top());
         assert_eq!(lua_state.to_integer(lua_state.get_top()), 5);
@@ -461,7 +508,7 @@ mod tests {
 
     #[test]
     fn test_clac() {
-        let mut ls = LuaState::new();
+        let mut ls = LuaState::new(20, Prototype::default());
 
         ls.push_integer(1);
         ls.push_string("2.0".to_string());

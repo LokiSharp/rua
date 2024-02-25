@@ -2,14 +2,14 @@ mod arith_ops;
 mod cmp_ops;
 mod lua_stack;
 mod lua_state;
-mod lua_value;
+pub mod lua_value;
 mod math;
 
 pub use self::lua_state::LuaState;
-use crate::api::LuaAPI;
+use crate::{api::LuaAPI, binary::chunk::Prototype};
 
-pub fn new_lua_state() -> LuaState {
-    LuaState::new()
+pub fn new_lua_state(stack_size: usize, proto: Prototype) -> LuaState {
+    LuaState::new(stack_size, proto)
 }
 
 mod tests {
@@ -18,7 +18,7 @@ mod tests {
     use super::*;
     #[test]
     fn test_lua_state() {
-        let mut ls = new_lua_state();
+        let mut ls = new_lua_state(20, Prototype::default());
         ls.push_boolean(true);
         print_stack(&ls);
         ls.push_integer(10);
