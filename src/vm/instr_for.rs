@@ -1,10 +1,4 @@
-use std::f32::consts::E;
-
-use crate::api::{
-    op::{ArithOp, CmpOp},
-    r#type::Type,
-    LuaVM,
-};
+use crate::api::LuaVM;
 
 use super::instruction::Instruction;
 
