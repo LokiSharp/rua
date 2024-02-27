@@ -106,6 +106,31 @@ pub fn div(i: u32, vm: &mut dyn LuaVM) {
 pub fn idiv(i: u32, vm: &mut dyn LuaVM) {
     arith(i, vm, ArithOp::IDIV as u8);
 }
+
+// OP_BAND             A B C               R[A] := R[B] & R[C]
+pub fn band(i: u32, vm: &mut dyn LuaVM) {
+    arith(i, vm, ArithOp::BAND as u8);
+}
+
+// OP_BOR              A B C               R[A] := R[B] | R[C]
+pub fn bor(i: u32, vm: &mut dyn LuaVM) {
+    arith(i, vm, ArithOp::BOR as u8);
+}
+
+// OP_BXOR             A B C               R[A] := R[B] ~ R[C]
+pub fn bxor(i: u32, vm: &mut dyn LuaVM) {
+    arith(i, vm, ArithOp::BXOR as u8);
+}
+
+// OP_SHL              A B C               R[A] := R[B] << R[C]
+pub fn shl(i: u32, vm: &mut dyn LuaVM) {
+    arith(i, vm, ArithOp::SHL as u8);
+}
+
+// OP_SHR              A B C               R[A] := R[B] >> R[C]
+pub fn shr(i: u32, vm: &mut dyn LuaVM) {
+    arith(i, vm, ArithOp::SHR as u8);
+}
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -400,5 +425,60 @@ mod tests {
 
     fn numbers_are_equal(a: f64, b: f64, epsilon: f64) -> bool {
         (a - b).abs() < epsilon
+    }
+
+    #[test]
+    fn test_band() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(0b00000001);
+        vm.push_integer(0b11111111);
+        band(0b00000010_00000001_0_00000000_0101001, &mut vm);
+        assert!(vm.is_integer(1));
+        assert!(vm.to_integer(1) == 0b00000001)
+    }
+
+    #[test]
+    fn test_bor() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(0b00000000);
+        vm.push_integer(0b11111111);
+        bor(0b00000010_00000001_0_00000000_0101010, &mut vm);
+        assert!(vm.is_integer(1));
+        assert!(vm.to_integer(1) == 0b11111111)
+    }
+
+    #[test]
+    fn test_bxor() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(0b00000001);
+        vm.push_integer(0b11111111);
+        bxor(0b00000010_00000001_0_00000000_0101011, &mut vm);
+        assert!(vm.is_integer(1));
+        assert!(vm.to_integer(1) == 0b11111110)
+    }
+
+    #[test]
+    fn test_shl() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(0b00001111);
+        vm.push_integer(1);
+        shl(0b00000010_00000001_0_00000000_0101100, &mut vm);
+        assert!(vm.is_integer(1));
+        assert!(vm.to_integer(1) == 0b00011110)
+    }
+
+    #[test]
+    fn test_shr() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(0b00001111);
+        vm.push_integer(1);
+        shr(0b00000010_00000001_0_00000000_0101101, &mut vm);
+        assert!(vm.is_integer(1));
+        assert!(vm.to_integer(1) == 0b0000111)
     }
 }
