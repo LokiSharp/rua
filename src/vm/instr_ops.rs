@@ -32,6 +32,14 @@ fn arith_k(i: u32, vm: &mut dyn LuaVM, op: u8) {
     vm.replace(a);
 }
 
+//                    A B R(A) := op R(B)
+fn unary_arith(i: u32, vm: &mut dyn LuaVM, op: u8) {
+    let (a, b) = (i.get_arg_a() + 1, i.get_arg_b() + 1);
+    vm.push_value(b);
+    vm.arith(op);
+    vm.replace(a);
+}
+
 // OP_ADDI             A B sC              R[A] := R[B] + sC
 fn add_i(i: u32, vm: &mut dyn LuaVM) {
     arith_i(i, vm, ArithOp::ADD as u8);
@@ -155,6 +163,16 @@ pub fn shl(i: u32, vm: &mut dyn LuaVM) {
 // OP_SHR              A B C               R[A] := R[B] >> R[C]
 pub fn shr(i: u32, vm: &mut dyn LuaVM) {
     arith(i, vm, ArithOp::SHR as u8);
+}
+
+// OP_UNM              A B                 R[A] := -R[B]
+pub fn unm(i: u32, vm: &mut dyn LuaVM) {
+    unary_arith(i, vm, ArithOp::UNM as u8);
+}
+
+// OP_BNOT             A B                 R[A] := ~R[B]
+pub fn bnot(i: u32, vm: &mut dyn LuaVM) {
+    unary_arith(i, vm, ArithOp::BNOT as u8);
 }
 #[cfg(test)]
 mod tests {
@@ -558,5 +576,35 @@ mod tests {
         shr(0b00000010_00000001_0_00000000_0101101, &mut vm);
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == 0b0000111)
+    }
+
+    #[test]
+    fn test_unm_integer() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(1);
+        unm(0b00000000_00000001_0_00000000_0110001, &mut vm);
+        assert!(vm.is_integer(1));
+        assert!(vm.to_integer(1) == -1)
+    }
+
+    #[test]
+    fn test_unm_number() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_number(1.0);
+        unm(0b00000000_00000001_0_00000000_0110001, &mut vm);
+        assert!(vm.is_number(1));
+        assert!(vm.to_number(1) == -1.0)
+    }
+
+    #[test]
+    fn test_bnot() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(0b11111111);
+        bnot(0b00000000_00000001_0_00000000_0110010, &mut vm);
+        assert!(vm.is_integer(1));
+        assert!(vm.to_integer(1) == -256)
     }
 }
