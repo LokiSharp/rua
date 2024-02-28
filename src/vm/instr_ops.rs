@@ -211,6 +211,31 @@ pub fn bnot(i: u32, vm: &mut dyn LuaVM) {
     unary_arith(i, vm, ArithOp::BNOT as u8);
 }
 
+// OP_NOT              A B                 R[A] := not R[B]
+pub fn not(i: u32, vm: &mut dyn LuaVM) {
+    let (a, b) = (i.get_arg_a() + 1, i.get_arg_b() + 1);
+    vm.push_boolean(!vm.to_boolean(b));
+    vm.replace(a);
+}
+
+// OP_LEN              A B                 R[A] := #R[B] (length operator)
+pub fn len(i: u32, vm: &mut dyn LuaVM) {
+    let (a, b) = (i.get_arg_a() + 1, i.get_arg_b() + 1);
+    vm.len(b);
+    vm.replace(a);
+}
+
+// OP_CONCAT           A B                 R[A] := R[A].. ... ..R[A + B - 1]
+pub fn concat(i: u32, vm: &mut dyn LuaVM) {
+    let (a, b) = (i.get_arg_a() + 1, i.get_arg_b() + 1);
+    vm.check_stack(b as usize);
+    for i in (a + 1)..(a + b) {
+        vm.push_value(i);
+    }
+    vm.concat(b);
+    vm.replace(a);
+}
+
 // OP_EQ               A B k               if ((R[A] == R[B]) ~= k) then pc++
 pub fn eq(i: u32, vm: &mut dyn LuaVM) {
     compare(i, vm, CmpOp::EQ as u8);
@@ -689,6 +714,41 @@ mod tests {
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == -256)
     }
+    #[test]
+    fn test_not() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_boolean(true);
+        not(0b00000000_00000001_0_00000000_0110011, &mut vm);
+        assert!(vm.is_boolean(1));
+        assert!(vm.to_boolean(1) == false);
+
+        vm.push_boolean(false);
+        not(0b00000000_00000010_0_00000000_0110011, &mut vm);
+        assert!(vm.is_boolean(1));
+        assert!(vm.to_boolean(1) == true)
+    }
+
+    #[test]
+    fn test_len() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_string("hello".to_string());
+        len(0b00000000_00000001_0_00000000_0110100, &mut vm);
+        assert!(vm.is_integer(1));
+        assert!(vm.to_integer(1) == 5)
+    }
+
+    #[test]
+    fn test_concat() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_string("world".to_string());
+        vm.push_string("hello".to_string());
+        concat(0b00000000_00000001_0_00000000_0110101, &mut vm);
+        assert!(vm.is_string(1));
+        assert!(vm.to_string(1) == "helloworld")
+    }
 
     #[test]
     fn test_eq() {
@@ -834,5 +894,24 @@ mod tests {
         assert!(vm.pc() == 1);
         gt_i(0b00000000_10000001_0_00000001_1000000, &mut vm);
         assert!(vm.pc() == 1);
+    }
+
+    #[test]
+    fn test_ge_i() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(1);
+        assert!(vm.pc() == 0);
+        ge_i(0b00000000_01111111_0_00000000_1000000, &mut vm);
+        assert!(vm.pc() == 1);
+
+        vm.push_integer(1);
+        assert!(vm.pc() == 1);
+        ge_i(0b00000000_10000000_0_00000001_1000000, &mut vm);
+        assert!(vm.pc() == 2);
+
+        assert!(vm.pc() == 2);
+        ge_i(0b00000000_10000001_0_00000001_1000000, &mut vm);
+        assert!(vm.pc() == 2);
     }
 }
