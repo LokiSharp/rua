@@ -281,6 +281,23 @@ pub fn ge_i(i: u32, vm: &mut dyn LuaVM) {
     compare_i(i, vm, CmpOp::GE as u8);
 }
 
+// OP_TESTSET          A B k               if (not R[B] == k) then pc++ else R[A] := R[B] (*)
+pub fn test_set(i: u32, vm: &mut dyn LuaVM) {
+    let (a, b, k) = (i.get_arg_a() + 1, i.get_arg_b() + 1, i.get_arg_k());
+    if vm.to_boolean(b) == (k != 0) {
+        vm.copy(b, a);
+    } else {
+        vm.add_pc(1);
+    }
+}
+// OP_TEST             A k                 if (not R[A] == k) then pc++
+pub fn test(i: u32, vm: &mut dyn LuaVM) {
+    let (a, k) = (i.get_arg_a() + 1, i.get_arg_k());
+    if vm.to_boolean(a) != (k != 0) {
+        vm.add_pc(1);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -902,16 +919,45 @@ mod tests {
         vm.push_nil();
         vm.push_integer(1);
         assert!(vm.pc() == 0);
-        ge_i(0b00000000_01111111_0_00000000_1000000, &mut vm);
+        ge_i(0b00000000_01111111_0_00000000_1000001, &mut vm);
         assert!(vm.pc() == 1);
 
         vm.push_integer(1);
         assert!(vm.pc() == 1);
-        ge_i(0b00000000_10000000_0_00000001_1000000, &mut vm);
+        ge_i(0b00000000_10000000_0_00000001_1000001, &mut vm);
         assert!(vm.pc() == 2);
 
         assert!(vm.pc() == 2);
-        ge_i(0b00000000_10000001_0_00000001_1000000, &mut vm);
+        ge_i(0b00000000_10000001_0_00000001_1000001, &mut vm);
         assert!(vm.pc() == 2);
+    }
+
+    #[test]
+    fn test_test_set() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_boolean(true);
+        vm.push_boolean(true);
+        assert!(vm.pc() == 0);
+        test_set(0b00000000_00000001_1_00000000_1000010, &mut vm);
+        assert!(vm.to_boolean(1) == true);
+        assert!(vm.pc() == 0);
+        vm.push_boolean(false);
+        test_set(0b00000000_00000011_1_00000000_1000010, &mut vm);
+        assert!(vm.to_boolean(1) == true);
+        assert!(vm.pc() == 1);
+    }
+
+    #[test]
+    fn test_test() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_boolean(true);
+        assert!(vm.pc() == 0);
+        test(0b00000000_00000000_1_00000000_1000011, &mut vm);
+        assert!(vm.pc() == 1);
+        vm.push_boolean(false);
+        test(0b00000000_0000000_1_00000001_1000011, &mut vm);
+        assert!(vm.pc() == 1);
     }
 }
