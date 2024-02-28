@@ -144,7 +144,7 @@ mod tests {
     #[test]
     fn test_load_nil() {
         let mut vm = LuaState::new(10, Prototype::default());
-        for i in 1..=10 {
+        for _ in 1..=10 {
             vm.push_integer(0);
         }
         load_nil(0b00000000_00000101_0_00000000_0001000, &mut vm);

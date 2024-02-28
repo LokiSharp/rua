@@ -36,17 +36,24 @@ pub fn for_prep(i: u32, vm: &mut dyn LuaVM) {
         if step == 0 {
             panic!("for statement with step=0");
         }
-        let mut count = limit - init;
-        if step > 0 {
-            if step != 1 {
-                count /= step;
-            }
+        vm.push_integer(init);
+        vm.replace(a + 3);
+        if 0 < step && limit < init || step < 0 && init < limit {
+            vm.add_pc(bx + 1);
         } else {
-            count = init - limit;
-            count /= -step;
+            let mut count: i64;
+            if step > 0 {
+                count = limit - init;
+                if step != 1 {
+                    count /= step;
+                }
+            } else {
+                count = init - limit;
+                count /= -step;
+            }
+            vm.push_integer(count);
+            vm.replace(a + 1);
         }
-        vm.push_integer(count);
-        vm.replace(a + 1);
     } else {
         if !is_number_for_loop(vm, a) {
             panic!("for statement with non-numeric limit");

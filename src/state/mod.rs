@@ -5,15 +5,17 @@ mod lua_state;
 pub mod lua_value;
 mod math;
 
+use crate::binary::chunk::Prototype;
+
 pub use self::lua_state::LuaState;
-use crate::{api::LuaAPI, binary::chunk::Prototype};
 
 pub fn new_lua_state(stack_size: usize, proto: Prototype) -> LuaState {
     LuaState::new(stack_size, proto)
 }
 
+#[cfg(test)]
 mod tests {
-    use crate::api::r#type::Type;
+    use crate::api::{r#type::Type, LuaAPI};
 
     use super::*;
     #[test]

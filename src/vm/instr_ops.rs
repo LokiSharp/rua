@@ -56,7 +56,7 @@ fn compare(i: u32, vm: &mut dyn LuaVM, op: u8) {
 
 //                    if ((R[A] op sB) ~= k) then pc++
 fn compare_i(i: u32, vm: &mut dyn LuaVM, op: u8) {
-    let (a, sb, k) = (i.get_arg_a() + 1, i.get_arg_sb(), i.get_arg_k());
+    let (a, sb, k) = (i.get_arg_a(), i.get_arg_sb(), i.get_arg_k());
     vm.get_rk(a);
     vm.push_integer(sb as i64);
     if vm.compare(-2, -1, op) != (k != 0) {
@@ -77,7 +77,7 @@ fn compare_k(i: u32, vm: &mut dyn LuaVM, op: u8) {
 }
 
 // OP_ADDI             A B sC              R[A] := R[B] + sC
-fn add_i(i: u32, vm: &mut dyn LuaVM) {
+pub fn add_i(i: u32, vm: &mut dyn LuaVM) {
     arith_i(i, vm, ArithOp::ADD as u8);
 }
 
@@ -847,11 +847,11 @@ mod tests {
         vm.push_nil();
         vm.push_integer(1);
         assert!(vm.pc() == 0);
-        eq_i(0b00000000_10000000_0_00000000_0111101, &mut vm);
+        eq_i(0b00000000_10000000_0_00000001_0111101, &mut vm);
         assert!(vm.pc() == 1);
 
         assert!(vm.pc() == 1);
-        eq_i(0b00000000_01111111_0_00000000_0111101, &mut vm);
+        eq_i(0b00000000_01111111_0_00000001_0111101, &mut vm);
         assert!(vm.pc() == 1);
     }
 
@@ -861,16 +861,16 @@ mod tests {
         vm.push_nil();
         vm.push_integer(1);
         assert!(vm.pc() == 0);
-        lt_i(0b00000000_10000001_0_00000000_0111110, &mut vm);
+        lt_i(0b00000000_10000001_0_00000001_0111110, &mut vm);
         assert!(vm.pc() == 1);
 
         vm.push_integer(2);
         assert!(vm.pc() == 1);
-        lt_i(0b00000000_10000001_0_00000001_0111110, &mut vm);
+        lt_i(0b00000000_10000001_0_00000010_0111110, &mut vm);
         assert!(vm.pc() == 1);
 
         assert!(vm.pc() == 1);
-        lt_i(0b00000000__0_00000001_111110, &mut vm);
+        lt_i(0b00000000_00000000_0_00000010_111110, &mut vm);
         assert!(vm.pc() == 1);
     }
 
@@ -880,17 +880,17 @@ mod tests {
         vm.push_nil();
         vm.push_integer(1);
         assert!(vm.pc() == 0);
-        le_i(0b00000000_10000001_0_00000000_0111111, &mut vm);
+        le_i(0b00000000_10000001_0_00000001_0111111, &mut vm);
         assert!(vm.pc() == 1);
 
         vm.push_integer(2);
         assert!(vm.pc() == 1);
-        le_i(0b00000000_10000001_0_00000001_0111111, &mut vm);
+        le_i(0b00000000_10000001_0_00000010_0111111, &mut vm);
         assert!(vm.pc() == 2);
 
         vm.push_integer(0);
         assert!(vm.pc() == 2);
-        le_i(0b00000000_01111111_0_00000001_0111111, &mut vm);
+        le_i(0b00000000_01111111_0_00000010_0111111, &mut vm);
         assert!(vm.pc() == 2);
     }
 
@@ -900,16 +900,16 @@ mod tests {
         vm.push_nil();
         vm.push_integer(1);
         assert!(vm.pc() == 0);
-        gt_i(0b00000000_01111111_0_00000000_1000000, &mut vm);
+        gt_i(0b00000000_01111111_0_00000001_1000000, &mut vm);
         assert!(vm.pc() == 1);
 
         vm.push_integer(1);
         assert!(vm.pc() == 1);
-        gt_i(0b00000000_10000000_0_00000001_1000000, &mut vm);
+        gt_i(0b00000000_10000000_0_00000010_1000000, &mut vm);
         assert!(vm.pc() == 1);
 
         assert!(vm.pc() == 1);
-        gt_i(0b00000000_10000001_0_00000001_1000000, &mut vm);
+        gt_i(0b00000000_10000001_0_00000010_1000000, &mut vm);
         assert!(vm.pc() == 1);
     }
 
@@ -919,16 +919,16 @@ mod tests {
         vm.push_nil();
         vm.push_integer(1);
         assert!(vm.pc() == 0);
-        ge_i(0b00000000_01111111_0_00000000_1000001, &mut vm);
+        ge_i(0b00000000_01111111_0_00000001_1000001, &mut vm);
         assert!(vm.pc() == 1);
 
         vm.push_integer(1);
         assert!(vm.pc() == 1);
-        ge_i(0b00000000_10000000_0_00000001_1000001, &mut vm);
+        ge_i(0b00000000_10000000_0_00000010_1000001, &mut vm);
         assert!(vm.pc() == 2);
 
         assert!(vm.pc() == 2);
-        ge_i(0b00000000_10000001_0_00000001_1000001, &mut vm);
+        ge_i(0b00000000_10000001_0_00000010_1000001, &mut vm);
         assert!(vm.pc() == 2);
     }
 

@@ -15,6 +15,11 @@
 +-------+--------------------------------------------------+--------------+
 */
 
+use crate::{
+    api::LuaVM,
+    vm::{instr_for::*, instr_load::*, instr_misc::*, instr_ops::*, opcodes::*},
+};
+
 use super::opcodes::OPCODES;
 pub const SIZE_A: isize = 8;
 pub const SIZE_B: isize = 8;
@@ -59,6 +64,7 @@ pub trait Instruction {
     fn get_arg_sc(self) -> isize;
     fn get_arg_sbx(self) -> isize;
     fn get_arg_sj(self) -> isize;
+    fn execute(self, vm: &mut dyn LuaVM);
 }
 
 impl Instruction for u32 {
@@ -112,5 +118,127 @@ impl Instruction for u32 {
 
     fn get_arg_sj(self) -> isize {
         (self >> POS_SJ & MAXARG_AX as u32) as isize - OFFSET_SJ
+    }
+
+    fn execute(self, vm: &mut dyn LuaVM) {
+        match self.opcode() {
+            OP_MOVE => _move(self, vm),
+            OP_LOADI => load_i(self, vm),
+            OP_LOADF => load_f(self, vm),
+            OP_LOADK => load_k(self, vm),
+            OP_LOADKX => load_kx(self, vm),
+            OP_LOADFALSE => load_false(self, vm),
+            OP_LFALSESKIP => load_l_false_skip(self, vm),
+            OP_LOADTRUE => load_true(self, vm),
+            OP_LOADNIL => load_nil(self, vm),
+            OP_ADDI => add_i(self, vm),
+            OP_ADDK => add_k(self, vm),
+            OP_SUBK => sub_k(self, vm),
+            OP_MULK => mul_k(self, vm),
+            OP_MODK => _mod_k(self, vm),
+            OP_POWK => pow_k(self, vm),
+            OP_DIVK => div_k(self, vm),
+            OP_IDIVK => idiv_k(self, vm),
+            OP_BANDK => band_k(self, vm),
+            OP_BORK => bor_k(self, vm),
+            OP_BXORK => bxor_k(self, vm),
+            OP_SHLI => shl_i(self, vm),
+            OP_SHRI => shr_i(self, vm),
+            OP_ADD => add(self, vm),
+            OP_SUB => sub(self, vm),
+            OP_MUL => mul(self, vm),
+            OP_MOD => _mod(self, vm),
+            OP_POW => pow(self, vm),
+            OP_DIV => div(self, vm),
+            OP_IDIV => idiv(self, vm),
+            OP_BAND => band(self, vm),
+            OP_BOR => bor(self, vm),
+            OP_BXOR => bxor(self, vm),
+            OP_SHL => shl(self, vm),
+            OP_SHR => shr(self, vm),
+            OP_MMBIN => {}
+            OP_MMBINI => {}
+            OP_MMBINK => {}
+            OP_UNM => unm(self, vm),
+            OP_BNOT => bnot(self, vm),
+            OP_NOT => not(self, vm),
+            OP_LEN => len(self, vm),
+            OP_CONCAT => concat(self, vm),
+            OP_JMP => jmp(self, vm),
+            OP_EQ => eq(self, vm),
+            OP_LT => lt(self, vm),
+            OP_LE => le(self, vm),
+            OP_EQK => eq_k(self, vm),
+            OP_EQI => eq_i(self, vm),
+            OP_LTI => lt_i(self, vm),
+            OP_LEI => le_i(self, vm),
+            OP_GTI => gt_i(self, vm),
+            OP_GEI => ge_i(self, vm),
+            OP_TEST => test(self, vm),
+            OP_TESTSET => test_set(self, vm),
+            OP_FORLOOP => for_loop(self, vm),
+            OP_FORPREP => for_prep(self, vm),
+            OP_VARARGPREP => {}
+            _ => {
+                dbg!(self.opname());
+                unimplemented!()
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{fs::File, io::Read};
+
+    use crate::{
+        api::{r#type::Type, LuaAPI},
+        binary::{self, chunk::Prototype},
+        state::{self, LuaState},
+        vm::opcodes,
+    };
+
+    use super::*;
+
+    #[test]
+    fn test_instruction() {
+        let mut file = File::open("lua/sum.luac").expect("Failed to open file");
+
+        let mut data = Vec::new();
+        let _ = file.read_to_end(&mut data);
+
+        let proto = binary::undump(data);
+        lua_main(proto);
+    }
+
+    fn lua_main(proto: Prototype) {
+        let nregs = proto.max_stack_size;
+        let mut ls = state::new_lua_state((nregs + 8) as usize, proto);
+        ls.set_top(nregs as isize);
+        loop {
+            let pc = ls.pc();
+            let instr = ls.fetch();
+            if instr.opcode() != opcodes::OP_RETURN {
+                instr.execute(&mut ls);
+                print!("[{:04}] {} \t", pc + 1, instr.opname());
+                print_stack(&ls);
+            } else {
+                break;
+            }
+        }
+    }
+
+    fn print_stack(ls: &LuaState) {
+        let top = ls.get_top();
+        for i in 1..top + 1 {
+            let t = ls.type_id(i);
+            match Type::from_i8(t) {
+                Some(Type::Boolean) => print!("[{}]", ls.to_boolean(i)),
+                Some(Type::Number) => print!("[{}]", ls.to_number(i)),
+                Some(Type::String) => print!("[{:?}]", ls.to_string(i)),
+                _ => print!("[{}]", ls.type_name(t)), // other values
+            }
+        }
+        println!("");
     }
 }
