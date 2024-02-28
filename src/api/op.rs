@@ -43,6 +43,8 @@ pub enum CmpOp {
     EQ,
     LT,
     LE,
+    GT,
+    GE,
 }
 
 impl CmpOp {
@@ -51,6 +53,8 @@ impl CmpOp {
             0 => Some(CmpOp::EQ),
             1 => Some(CmpOp::LT),
             2 => Some(CmpOp::LE),
+            3 => Some(CmpOp::GT),
+            4 => Some(CmpOp::GE),
             _ => None,
         }
     }

@@ -6,6 +6,8 @@ pub fn compare(a: &LuaValue, b: &LuaValue, op: u8) -> Option<bool> {
         Some(CmpOp::EQ) => Some(eq(a, b)),
         Some(CmpOp::LT) => lt(a, b),
         Some(CmpOp::LE) => le(a, b),
+        Some(CmpOp::GT) => gt(a, b),
+        Some(CmpOp::GE) => ge(a, b),
         _ => None,
     }
 }
@@ -50,6 +52,14 @@ fn lt(a: &LuaValue, b: &LuaValue) -> Option<bool> {
 
 fn le(a: &LuaValue, b: &LuaValue) -> Option<bool> {
     cmp!(a <= b)
+}
+
+fn gt(a: &LuaValue, b: &LuaValue) -> Option<bool> {
+    cmp!(a > b)
+}
+
+fn ge(a: &LuaValue, b: &LuaValue) -> Option<bool> {
+    cmp!(a >= b)
 }
 
 #[cfg(test)]

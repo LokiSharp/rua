@@ -1,4 +1,7 @@
-use crate::api::{op::ArithOp, LuaVM};
+use crate::api::{
+    op::{ArithOp, CmpOp},
+    LuaVM,
+};
 
 use super::instruction::Instruction;
 
@@ -32,12 +35,45 @@ fn arith_k(i: u32, vm: &mut dyn LuaVM, op: u8) {
     vm.replace(a);
 }
 
-//                    A B R(A) := op R(B)
+//                    R(A) := op R(B)
 fn unary_arith(i: u32, vm: &mut dyn LuaVM, op: u8) {
     let (a, b) = (i.get_arg_a() + 1, i.get_arg_b() + 1);
     vm.push_value(b);
     vm.arith(op);
     vm.replace(a);
+}
+
+//                    if ((R[A] op R[B]) ~= k) then pc++
+fn compare(i: u32, vm: &mut dyn LuaVM, op: u8) {
+    let (a, b, k) = (i.get_arg_a() + 1, i.get_arg_b() + 1, i.get_arg_k());
+    vm.get_rk(a);
+    vm.get_rk(b);
+    if vm.compare(-2, -1, op) != (k != 0) {
+        vm.add_pc(1);
+    }
+    vm.pop(2);
+}
+
+//                    if ((R[A] op sB) ~= k) then pc++
+fn compare_i(i: u32, vm: &mut dyn LuaVM, op: u8) {
+    let (a, sb, k) = (i.get_arg_a() + 1, i.get_arg_sb(), i.get_arg_k());
+    vm.get_rk(a);
+    vm.push_integer(sb as i64);
+    if vm.compare(-2, -1, op) != (k != 0) {
+        vm.add_pc(1);
+    }
+    vm.pop(2);
+}
+
+//                    if ((R[A] op K[B]) ~= k) then pc++
+fn compare_k(i: u32, vm: &mut dyn LuaVM, op: u8) {
+    let (a, b, k) = (i.get_arg_a() + 1, i.get_arg_b(), i.get_arg_k());
+    vm.get_rk(a);
+    vm.get_const(b);
+    if vm.compare(-2, -1, op) != (k != 0) {
+        vm.add_pc(1);
+    }
+    vm.pop(2);
 }
 
 // OP_ADDI             A B sC              R[A] := R[B] + sC
@@ -174,6 +210,52 @@ pub fn unm(i: u32, vm: &mut dyn LuaVM) {
 pub fn bnot(i: u32, vm: &mut dyn LuaVM) {
     unary_arith(i, vm, ArithOp::BNOT as u8);
 }
+
+// OP_EQ               A B k               if ((R[A] == R[B]) ~= k) then pc++
+pub fn eq(i: u32, vm: &mut dyn LuaVM) {
+    compare(i, vm, CmpOp::EQ as u8);
+}
+
+// OP_LT               A B k               if ((R[A] <  R[B]) ~= k) then pc++
+pub fn lt(i: u32, vm: &mut dyn LuaVM) {
+    compare(i, vm, CmpOp::LT as u8);
+}
+
+// OP_LE               A B k               if ((R[A] <= R[B]) ~= k) then pc++
+pub fn le(i: u32, vm: &mut dyn LuaVM) {
+    compare(i, vm, CmpOp::LE as u8);
+}
+
+// OP_EQK              A B k               if ((R[A] == K[B]) ~= k) then pc++
+pub fn eq_k(i: u32, vm: &mut dyn LuaVM) {
+    compare_k(i, vm, CmpOp::EQ as u8);
+}
+
+// OP_EQI              A sB k              if ((R[A] == sB) ~= k) then pc++
+pub fn eq_i(i: u32, vm: &mut dyn LuaVM) {
+    compare_i(i, vm, CmpOp::EQ as u8);
+}
+
+// OP_LTI              A sB k              if ((R[A] < sB) ~= k) then pc++
+pub fn lt_i(i: u32, vm: &mut dyn LuaVM) {
+    compare_i(i, vm, CmpOp::LT as u8);
+}
+
+// OP_LEI              A sB k              if ((R[A] <= sB) ~= k) then pc++
+pub fn le_i(i: u32, vm: &mut dyn LuaVM) {
+    compare_i(i, vm, CmpOp::LE as u8);
+}
+
+// OP_GTI              A sB k              if ((R[A] > sB) ~= k) then pc++
+pub fn gt_i(i: u32, vm: &mut dyn LuaVM) {
+    compare_i(i, vm, CmpOp::GT as u8);
+}
+
+// OP_GEI              A sB k              if ((R[A] >= sB) ~= k) then pc++
+pub fn ge_i(i: u32, vm: &mut dyn LuaVM) {
+    compare_i(i, vm, CmpOp::GE as u8);
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -606,5 +688,151 @@ mod tests {
         bnot(0b00000000_00000001_0_00000000_0110010, &mut vm);
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == -256)
+    }
+
+    #[test]
+    fn test_eq() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(1);
+        vm.push_integer(1);
+        assert!(vm.pc() == 0);
+        eq(0b00000000_00000001_0_00000000_0111001, &mut vm);
+        assert!(vm.pc() == 1);
+
+        vm.push_integer(0);
+        assert!(vm.pc() == 1);
+        eq(0b00000000_00000010_0_00000001_0111001, &mut vm);
+        assert!(vm.pc() == 1);
+    }
+
+    #[test]
+    fn test_lt() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(1);
+        vm.push_integer(2);
+        assert!(vm.pc() == 0);
+        lt(0b00000000_00000001_0_00000000_0111010, &mut vm);
+        assert!(vm.pc() == 1);
+
+        vm.push_integer(2);
+        assert!(vm.pc() == 1);
+        lt(0b00000000_00000010_0_00000001_0111010, &mut vm);
+        assert!(vm.pc() == 1);
+
+        vm.push_integer(0);
+        assert!(vm.pc() == 1);
+        lt(0b00000000_00000011_0_00000001_0111010, &mut vm);
+        assert!(vm.pc() == 1);
+    }
+
+    #[test]
+    fn test_le() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(1);
+        vm.push_integer(2);
+        assert!(vm.pc() == 0);
+        le(0b00000000_00000001_0_00000000_0111011, &mut vm);
+        assert!(vm.pc() == 1);
+
+        vm.push_integer(2);
+        assert!(vm.pc() == 1);
+        le(0b00000000_00000010_0_00000001_0111011, &mut vm);
+        assert!(vm.pc() == 2);
+
+        vm.push_integer(0);
+        assert!(vm.pc() == 2);
+        le(0b00000000_00000011_0_00000001_0111011, &mut vm);
+        assert!(vm.pc() == 2);
+    }
+
+    #[test]
+    fn test_eq_k() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(1);
+        vm.proto.constants.push(Constant::Integer(1));
+        assert!(vm.pc() == 0);
+        eq_k(0b00000000_00000000_0_00000000_0111100, &mut vm);
+        assert!(vm.pc() == 1);
+
+        vm.proto.constants.push(Constant::Integer(0));
+        assert!(vm.pc() == 1);
+        eq_k(0b00000000_00000001_0_00000001_0111100, &mut vm);
+        assert!(vm.pc() == 1);
+    }
+
+    #[test]
+    fn test_eq_i() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(1);
+        assert!(vm.pc() == 0);
+        eq_i(0b00000000_10000000_0_00000000_0111101, &mut vm);
+        assert!(vm.pc() == 1);
+
+        assert!(vm.pc() == 1);
+        eq_i(0b00000000_01111111_0_00000000_0111101, &mut vm);
+        assert!(vm.pc() == 1);
+    }
+
+    #[test]
+    fn test_lt_i() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(1);
+        assert!(vm.pc() == 0);
+        lt_i(0b00000000_10000001_0_00000000_0111110, &mut vm);
+        assert!(vm.pc() == 1);
+
+        vm.push_integer(2);
+        assert!(vm.pc() == 1);
+        lt_i(0b00000000_10000001_0_00000001_0111110, &mut vm);
+        assert!(vm.pc() == 1);
+
+        assert!(vm.pc() == 1);
+        lt_i(0b00000000__0_00000001_111110, &mut vm);
+        assert!(vm.pc() == 1);
+    }
+
+    #[test]
+    fn test_le_i() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(1);
+        assert!(vm.pc() == 0);
+        le_i(0b00000000_10000001_0_00000000_0111111, &mut vm);
+        assert!(vm.pc() == 1);
+
+        vm.push_integer(2);
+        assert!(vm.pc() == 1);
+        le_i(0b00000000_10000001_0_00000001_0111111, &mut vm);
+        assert!(vm.pc() == 2);
+
+        vm.push_integer(0);
+        assert!(vm.pc() == 2);
+        le_i(0b00000000_01111111_0_00000001_0111111, &mut vm);
+        assert!(vm.pc() == 2);
+    }
+
+    #[test]
+    fn test_gt_i() {
+        let mut vm = LuaState::new(10, Prototype::default());
+        vm.push_nil();
+        vm.push_integer(1);
+        assert!(vm.pc() == 0);
+        gt_i(0b00000000_01111111_0_00000000_1000000, &mut vm);
+        assert!(vm.pc() == 1);
+
+        vm.push_integer(1);
+        assert!(vm.pc() == 1);
+        gt_i(0b00000000_10000000_0_00000001_1000000, &mut vm);
+        assert!(vm.pc() == 1);
+
+        assert!(vm.pc() == 1);
+        gt_i(0b00000000_10000001_0_00000001_1000000, &mut vm);
+        assert!(vm.pc() == 1);
     }
 }
