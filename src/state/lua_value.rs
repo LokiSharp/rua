@@ -1,16 +1,73 @@
+use core::fmt;
+use core::hash::Hash;
+use std::cell::RefCell;
+use std::hash::Hasher;
+use std::rc::Rc;
+
 use crate::api::r#type::Type;
 
-#[derive(Clone, Debug, PartialEq)]
-#[allow(dead_code)]
+use super::lua_table::LuaTable;
+
+#[derive(Clone)]
 pub enum LuaValue {
     Nil,
     Boolean(bool),
     Number(f64),
     Integer(i64),
     Str(String),
+    Table(Rc<RefCell<LuaTable>>),
+}
+
+impl fmt::Debug for LuaValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            LuaValue::Nil => write!(f, "nil"),
+            LuaValue::Boolean(b) => write!(f, "{}", b),
+            LuaValue::Number(n) => write!(f, "{}", n),
+            LuaValue::Integer(i) => write!(f, "{}", i),
+            LuaValue::Str(s) => write!(f, "{:?}", s),
+            LuaValue::Table(_) => write!(f, "table"),
+        }
+    }
+}
+
+impl PartialEq for LuaValue {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (LuaValue::Nil, LuaValue::Nil) => true,
+            (LuaValue::Boolean(b1), LuaValue::Boolean(b2)) => b1 == b2,
+            (LuaValue::Number(n1), LuaValue::Number(n2)) => n1 == n2,
+            (LuaValue::Integer(i1), LuaValue::Integer(i2)) => i1 == i2,
+            (LuaValue::Str(s1), LuaValue::Str(s2)) => s1 == s2,
+            (LuaValue::Table(t1), LuaValue::Table(t2)) => Rc::ptr_eq(t1, t2),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for LuaValue {}
+
+impl Hash for LuaValue {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            LuaValue::Nil => 0.hash(state),
+            LuaValue::Boolean(b) => b.hash(state),
+            LuaValue::Number(n) => n.to_bits().hash(state),
+            LuaValue::Integer(i) => i.hash(state),
+            LuaValue::Str(s) => s.hash(state),
+            LuaValue::Table(t) => t.borrow().hash(state),
+        }
+    }
 }
 
 impl LuaValue {
+    pub fn is_nil(&self) -> bool {
+        match self {
+            LuaValue::Nil => true,
+            _ => false,
+        }
+    }
+
     pub fn type_id(&self) -> i8 {
         match self {
             LuaValue::Nil => Type::Nil as i8,
@@ -18,6 +75,7 @@ impl LuaValue {
             LuaValue::Number(_) => Type::Number as i8,
             LuaValue::Integer(_) => Type::Number as i8,
             LuaValue::Str(_) => Type::String as i8,
+            LuaValue::Table(_) => Type::Table as i8,
         }
     }
 

@@ -2,9 +2,9 @@ mod arith_ops;
 mod cmp_ops;
 mod lua_stack;
 mod lua_state;
+pub mod lua_table;
 pub mod lua_value;
 mod math;
-
 use crate::binary::chunk::Prototype;
 
 pub use self::lua_state::LuaState;

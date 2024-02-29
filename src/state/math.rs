@@ -1,3 +1,17 @@
+pub fn random() -> usize {
+    let ptr = Box::into_raw(Box::new(0));
+    ptr as usize
+}
+
+pub fn number_to_integer(n: f64) -> Option<i64> {
+    let i = n as i64;
+    if i as f64 == n {
+        Some(i)
+    } else {
+        None
+    }
+}
+
 pub fn i_floor_div(a: i64, b: i64) -> i64 {
     if a > 0 && b > 0 || a < 0 && b < 0 || a % b == 0 {
         a / b
@@ -55,6 +69,21 @@ fn is_negative_infinite(f: f64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_random() {
+        let a = random();
+        let b = random();
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn test_number_to_integer() {
+        assert_eq!(number_to_integer(3.0), Some(3));
+        assert_eq!(number_to_integer(3.5), None);
+        assert_eq!(number_to_integer(-3.0), Some(-3));
+        assert_eq!(number_to_integer(-3.5), None);
+    }
 
     #[test]
     fn test_i_floor_div() {
