@@ -104,6 +104,10 @@ impl LuaValue {
             _ => None,
         }
     }
+
+    pub fn new_table(narr: usize, nrec: usize) -> LuaValue {
+        LuaValue::Table(Rc::new(RefCell::new(LuaTable::new(narr, nrec))))
+    }
 }
 
 fn float_to_integer(n: f64) -> Option<i64> {

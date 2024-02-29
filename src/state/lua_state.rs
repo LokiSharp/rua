@@ -352,6 +352,7 @@ impl LuaAPI for LuaState {
         let val = self.stack.get(idx);
         match val {
             LuaValue::Str(s) => self.stack.push(LuaValue::Integer(s.len() as i64)),
+            LuaValue::Table(t) => self.stack.push(LuaValue::Integer(t.borrow().len() as i64)),
             _ => panic!("length error!"),
         }
     }
@@ -375,6 +376,83 @@ impl LuaAPI for LuaState {
             }
         }
         // n == 1, do nothing
+    }
+
+    /// 创建一个新的空表，并将其推送到栈顶。
+    fn new_table(&mut self) {
+        self.create_table(0, 0);
+    }
+
+    /// 创建一个新的指定容量的空表，并将其推送到栈顶。
+    fn create_table(&mut self, narr: usize, nrec: usize) {
+        let t = LuaValue::new_table(narr, nrec);
+        self.stack.push(t);
+    }
+
+    /// 从栈顶弹出一个键，然后从栈顶弹出一个表，然后将该键对应的值推送到栈顶。
+    fn get_table(&mut self, idx: isize) -> i8 {
+        let t = self.stack.get(idx);
+        let k = self.stack.pop();
+        self.get_table_impl(&t, &k)
+    }
+
+    /// 从栈顶弹出一个键，然后从栈顶弹出一个表，然后将该键对应的值推送到栈顶。
+    fn get_field(&mut self, idx: isize, k: &str) -> i8 {
+        let t = self.stack.get(idx);
+        let k = LuaValue::Str(k.to_string());
+        self.get_table_impl(&t, &k)
+    }
+
+    /// 从栈顶弹出一个键，然后从栈顶弹出一个表，然后将该键对应的值推送到栈顶。
+    fn get_i(&mut self, idx: isize, i: i64) -> i8 {
+        let t = self.stack.get(idx);
+        let k = LuaValue::Integer(i);
+        self.get_table_impl(&t, &k)
+    }
+
+    /// 将栈顶的值弹出，并将其设置为表的值。
+    fn set_table(&mut self, idx: isize) {
+        let t = self.stack.get(idx);
+        let v = self.stack.pop();
+        let k = self.stack.pop();
+        Self::set_table_impl(&t, k, v);
+    }
+
+    /// 将栈顶的值弹出，并将其设置为表的值。
+    fn set_field(&mut self, idx: isize, k: &str) {
+        let t = self.stack.get(idx);
+        let v = self.stack.pop();
+        let k = LuaValue::Str(k.to_string());
+        Self::set_table_impl(&t, k, v);
+    }
+
+    /// 将栈顶的值弹出，并将其设置为表的值。
+    fn set_i(&mut self, idx: isize, i: i64) {
+        let t = self.stack.get(idx);
+        let v = self.stack.pop();
+        let k = LuaValue::Integer(i);
+        Self::set_table_impl(&t, k, v);
+    }
+}
+
+impl LuaState {
+    fn get_table_impl(&mut self, t: &LuaValue, k: &LuaValue) -> i8 {
+        if let LuaValue::Table(tbl) = t {
+            let v = tbl.borrow().get(k);
+            let type_id = v.type_id();
+            self.stack.push(v);
+            type_id
+        } else {
+            panic!("not a table!") // todo
+        }
+    }
+
+    fn set_table_impl(t: &LuaValue, k: LuaValue, v: LuaValue) {
+        if let LuaValue::Table(tbl) = t {
+            tbl.borrow_mut().put(k, v);
+        } else {
+            panic!("not a table!");
+        }
     }
 }
 #[cfg(test)]
@@ -610,5 +688,17 @@ mod tests {
         let mut lua_state = LuaState::new(10, proto);
         lua_state.add_pc(5);
         assert_eq!(lua_state.pc(), 5);
+    }
+
+    #[test]
+    fn test_lua_state_table() {
+        let mut ls = LuaState::new(20, Prototype::default());
+        ls.new_table();
+        ls.push_integer(1);
+        ls.push_integer(2);
+        ls.set_table(1);
+        ls.push_integer(1);
+        ls.get_table(1);
+        assert_eq!(ls.to_integer(-1), 2);
     }
 }
