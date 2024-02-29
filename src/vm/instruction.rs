@@ -17,7 +17,7 @@
 
 use crate::{
     api::LuaVM,
-    vm::{instr_for::*, instr_load::*, instr_misc::*, instr_ops::*, opcodes::*},
+    vm::{instr_for::*, instr_load::*, instr_misc::*, instr_ops::*, instr_table::*, opcodes::*},
 };
 
 use super::opcodes::OPCODES;
@@ -131,6 +131,13 @@ impl Instruction for u32 {
             OP_LFALSESKIP => load_l_false_skip(self, vm),
             OP_LOADTRUE => load_true(self, vm),
             OP_LOADNIL => load_nil(self, vm),
+            OP_GETTABLE => get_table(self, vm),
+            OP_GETI => get_i(self, vm),
+            OP_GETFIELD => get_field(self, vm),
+            OP_SETTABLE => set_table(self, vm),
+            OP_SETI => set_i(self, vm),
+            OP_SETFIELD => set_field(self, vm),
+            OP_NEWTABLE => new_table(self, vm),
             OP_ADDI => add_i(self, vm),
             OP_ADDK => add_k(self, vm),
             OP_SUBK => sub_k(self, vm),
@@ -175,10 +182,12 @@ impl Instruction for u32 {
             OP_GTI => gt_i(self, vm),
             OP_GEI => ge_i(self, vm),
             OP_TEST => test(self, vm),
-            OP_TESTSET => test_set(self, vm),
+            OP_SETLIST => set_list(self, vm),
             OP_FORLOOP => for_loop(self, vm),
             OP_FORPREP => for_prep(self, vm),
+            OP_TESTSET => test_set(self, vm),
             OP_VARARGPREP => {}
+            OP_EXTRAARG => {}
             _ => {
                 dbg!(self.opname());
                 unimplemented!()
@@ -202,7 +211,7 @@ mod tests {
 
     #[test]
     fn test_instruction() {
-        let mut file = File::open("lua/sum.luac").expect("Failed to open file");
+        let mut file = File::open("lua/table.luac").expect("Failed to open file");
 
         let mut data = Vec::new();
         let _ = file.read_to_end(&mut data);

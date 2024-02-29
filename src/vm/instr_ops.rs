@@ -227,9 +227,9 @@ pub fn len(i: u32, vm: &mut dyn LuaVM) {
 
 // OP_CONCAT           A B                 R[A] := R[A].. ... ..R[A + B - 1]
 pub fn concat(i: u32, vm: &mut dyn LuaVM) {
-    let (a, b) = (i.get_arg_a() + 1, i.get_arg_b() + 1);
+    let (a, b) = (i.get_arg_a() + 1, i.get_arg_b());
     vm.check_stack(b as usize);
-    for i in (a + 1)..(a + b) {
+    for i in (a)..(a + b) {
         vm.push_value(i);
     }
     vm.concat(b);
@@ -760,11 +760,11 @@ mod tests {
     fn test_concat() {
         let mut vm = LuaState::new(10, Prototype::default());
         vm.push_nil();
-        vm.push_string("world".to_string());
         vm.push_string("hello".to_string());
-        concat(0b00000000_00000001_0_00000000_0110101, &mut vm);
-        assert!(vm.is_string(1));
-        assert!(vm.to_string(1) == "helloworld")
+        vm.push_string("world".to_string());
+        concat(0b00000000_00000010_0_00000001_0110101, &mut vm);
+        assert!(vm.is_string(2));
+        assert!(vm.to_string(2) == "helloworld")
     }
 
     #[test]

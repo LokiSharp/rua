@@ -80,6 +80,7 @@ pub const OP_SETLIST: u8 = 0b1001110;
 pub const OP_CLOSURE: u8 = 0b1001111;
 pub const OP_VARARG: u8 = 0b1010000;
 pub const OP_VARARGPREP: u8 = 0b1010001;
+pub const OP_EXTRAARG: u8 = 0b1010010;
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
