@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_load_i() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_integer(0);
         load_i(0b10000000000000000_00000000_0000001, &mut vm);
         assert!(vm.is_integer(1));
@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn test_load_f() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_integer(0);
         load_f(0b10000000000000000_00000000_0000010, &mut vm);
         assert!(vm.is_number(1));
@@ -94,9 +94,11 @@ mod tests {
 
     #[test]
     fn tets_load_k() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(2));
+        let mut vm = LuaState::new_with_proto(proto);
+
         vm.push_integer(0);
-        vm.proto.constants.push(Constant::Integer(2));
         load_k(0b00000000000000000_00000000_0000011, &mut vm);
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == 2);
@@ -104,10 +106,12 @@ mod tests {
 
     #[test]
     fn test_load_kx() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(2));
+        proto.code.push(0b00000000000000000_00000000_0000000);
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_integer(0);
-        vm.proto.constants.push(Constant::Integer(2));
-        vm.proto.code.push(0b00000000000000000_00000000_0000000);
+
         load_kx(0b00000000_00000000_0_00000000_0000100, &mut vm);
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == 2);
@@ -115,7 +119,7 @@ mod tests {
 
     #[test]
     fn test_load_false() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_integer(0);
         load_false(0b00000000_00000000_0_00000000_0000101, &mut vm);
         assert!(vm.is_boolean(1));
@@ -124,7 +128,7 @@ mod tests {
 
     #[test]
     fn test_load_l_false_skip() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_integer(0);
         load_l_false_skip(0b00000000_00000000_0_00000000_0000110, &mut vm);
         assert!(vm.is_boolean(1));
@@ -134,7 +138,7 @@ mod tests {
 
     #[test]
     fn test_load_true() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_integer(0);
         load_true(0b00000000_00000000_0_00000000_0000111, &mut vm);
         assert!(vm.is_boolean(1));
@@ -143,7 +147,7 @@ mod tests {
 
     #[test]
     fn test_load_nil() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         for _ in 1..=10 {
             vm.push_integer(0);
         }

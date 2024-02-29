@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn test_table() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         new_table(0b00000000_00000000_0_00000000_0010011, &mut vm);
         assert!(vm.is_table(1));

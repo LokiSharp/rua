@@ -310,7 +310,7 @@ mod tests {
 
     #[test]
     fn test_add_i_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
         add_i(0b00000010_00000001_0_00000000_0010101, &mut vm);
@@ -320,7 +320,7 @@ mod tests {
 
     #[test]
     fn test_add_i_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_number(1.1);
         add_i(0b00000010_00000001_0_00000000_0010101, &mut vm);
@@ -330,10 +330,11 @@ mod tests {
 
     #[test]
     fn test_add_k_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(2));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_integer(1);
-        vm.proto.constants.push(Constant::Integer(2));
         add_k(0b00000000_00000001_0_00000000_0010110, &mut vm);
         assert!(vm.is_number(1));
         assert!(vm.to_integer(1) == 3)
@@ -341,10 +342,11 @@ mod tests {
 
     #[test]
     fn test_add_k_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Number(2f64));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_number(1.1);
-        vm.proto.constants.push(Constant::Number(2f64));
         add_k(0b00000000_00000001_0_00000000_0010110, &mut vm);
         assert!(vm.is_number(1));
         assert!(numbers_are_equal(vm.to_number(1), 3.1, 0.01))
@@ -352,10 +354,11 @@ mod tests {
 
     #[test]
     fn test_sub_k_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(2));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_integer(1);
-        vm.proto.constants.push(Constant::Integer(2));
         sub_k(0b00000000_00000001_0_00000000_0010111, &mut vm);
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == -1)
@@ -363,10 +366,11 @@ mod tests {
 
     #[test]
     fn test_sub_k_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Number(2.2));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_number(1.1);
-        vm.proto.constants.push(Constant::Number(2.2));
         sub_k(0b00000000_00000001_0_00000000_0010111, &mut vm);
         assert!(vm.is_number(1));
         assert!(numbers_are_equal(vm.to_number(1), -1.1, 0.01))
@@ -374,10 +378,11 @@ mod tests {
 
     #[test]
     fn test_mul_k_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(2));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_integer(1);
-        vm.proto.constants.push(Constant::Integer(2));
         mul_k(0b00000000_00000001_0_00000000_0011000, &mut vm);
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == 2)
@@ -385,10 +390,11 @@ mod tests {
 
     #[test]
     fn test_mul_k_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Number(2.2));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_number(1.1);
-        vm.proto.constants.push(Constant::Number(2.2));
         mul_k(0b00000000_00000001_0_00000000_0011000, &mut vm);
         assert!(vm.is_number(1));
         assert!(numbers_are_equal(vm.to_number(1), 2.42, 0.01))
@@ -396,20 +402,22 @@ mod tests {
 
     #[test]
     fn test_mod_k_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(2));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_integer(1);
-        vm.proto.constants.push(Constant::Integer(2));
         _mod_k(0b00000000_00000001_0_00000000_0011001, &mut vm);
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == 1)
     }
     #[test]
     fn test_mod_k_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Number(2.2));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_number(1.1);
-        vm.proto.constants.push(Constant::Number(2.2));
         _mod_k(0b00000000_00000001_0_00000000_0011001, &mut vm);
         assert!(vm.is_number(1));
         assert!(numbers_are_equal(vm.to_number(1), 1.1, 0.01))
@@ -417,10 +425,11 @@ mod tests {
 
     #[test]
     fn test_pow_k() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(2));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_integer(2);
-        vm.proto.constants.push(Constant::Integer(2));
         pow_k(0b00000000_00000001_0_00000000_0101010, &mut vm);
         assert!(vm.is_number(1));
         assert!(vm.to_number(1) == 4f64)
@@ -428,10 +437,11 @@ mod tests {
 
     #[test]
     fn test_div_k() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(2));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_integer(2);
-        vm.proto.constants.push(Constant::Integer(2));
         div_k(0b00000000_00000001_0_00000000_0101011, &mut vm);
         assert!(vm.is_number(1));
         assert!(vm.to_number(1) == 1f64)
@@ -439,10 +449,11 @@ mod tests {
 
     #[test]
     fn test_idiv_k_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(2));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_integer(2);
-        vm.proto.constants.push(Constant::Integer(2));
         idiv_k(0b00000000_00000001_0_00000000_0101100, &mut vm);
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == 1)
@@ -450,10 +461,11 @@ mod tests {
 
     #[test]
     fn test_idiv_k_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Number(2.2));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_number(2.2);
-        vm.proto.constants.push(Constant::Number(2.2));
         idiv_k(0b00000000_00000001_0_00000000_0101100, &mut vm);
         assert!(vm.is_number(1));
         assert!(numbers_are_equal(vm.to_number(1), 1f64, 0.01))
@@ -461,10 +473,11 @@ mod tests {
 
     #[test]
     fn test_band_k() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(0b11111111));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_integer(0b00000001);
-        vm.proto.constants.push(Constant::Integer(0b11111111));
         band_k(0b00000000_00000001_0_00000000_0011101, &mut vm);
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == 0b00000001)
@@ -472,10 +485,11 @@ mod tests {
 
     #[test]
     fn test_bor_k() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(0b11111111));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_integer(0b00000000);
-        vm.proto.constants.push(Constant::Integer(0b11111111));
         bor_k(0b00000000_00000001_0_00000000_0011110, &mut vm);
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == 0b11111111)
@@ -483,10 +497,11 @@ mod tests {
 
     #[test]
     fn test_bxor_k() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(0b11111111));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_integer(0b00000001);
-        vm.proto.constants.push(Constant::Integer(0b11111111));
         bxor_k(0b00000000_00000001_0_00000000_0011110, &mut vm);
         assert!(vm.is_integer(1));
         assert!(vm.to_integer(1) == 0b11111110)
@@ -494,7 +509,7 @@ mod tests {
 
     #[test]
     fn test_shl_i() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(0b00001111);
         shl_i(0b00000001_00000001_0_00000000_0100000, &mut vm);
@@ -504,7 +519,7 @@ mod tests {
 
     #[test]
     fn test_shr_i() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(0b00001111);
         shr_i(0b00000001_00000001_0_00000000_0100001, &mut vm);
@@ -514,7 +529,7 @@ mod tests {
 
     #[test]
     fn test_add_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
         vm.push_integer(2);
@@ -525,7 +540,7 @@ mod tests {
 
     #[test]
     fn test_add_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_number(1.1);
         vm.push_number(2.2);
@@ -536,7 +551,7 @@ mod tests {
 
     #[test]
     fn test_sub_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
         vm.push_integer(2);
@@ -547,7 +562,7 @@ mod tests {
 
     #[test]
     fn test_sub_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_number(1.1);
         vm.push_number(2.2);
@@ -558,7 +573,7 @@ mod tests {
 
     #[test]
     fn test_mul_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
         vm.push_integer(2);
@@ -569,7 +584,7 @@ mod tests {
 
     #[test]
     fn test_mul_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_number(1.1);
         vm.push_number(2.2);
@@ -580,7 +595,7 @@ mod tests {
 
     #[test]
     fn test_mod_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
         vm.push_integer(2);
@@ -590,7 +605,7 @@ mod tests {
     }
     #[test]
     fn test_mod_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_number(1.1);
         vm.push_number(2.2);
@@ -601,7 +616,7 @@ mod tests {
 
     #[test]
     fn test_pow() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(2);
         vm.push_integer(2);
@@ -612,7 +627,7 @@ mod tests {
 
     #[test]
     fn test_div() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(2);
         vm.push_integer(2);
@@ -623,7 +638,7 @@ mod tests {
 
     #[test]
     fn test_idiv_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(2);
         vm.push_integer(2);
@@ -634,7 +649,7 @@ mod tests {
 
     #[test]
     fn test_idiv_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_number(2.2);
         vm.push_number(2.2);
@@ -649,7 +664,7 @@ mod tests {
 
     #[test]
     fn test_band() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(0b00000001);
         vm.push_integer(0b11111111);
@@ -660,7 +675,7 @@ mod tests {
 
     #[test]
     fn test_bor() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(0b00000000);
         vm.push_integer(0b11111111);
@@ -671,7 +686,7 @@ mod tests {
 
     #[test]
     fn test_bxor() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(0b00000001);
         vm.push_integer(0b11111111);
@@ -682,7 +697,7 @@ mod tests {
 
     #[test]
     fn test_shl() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(0b00001111);
         vm.push_integer(1);
@@ -693,7 +708,7 @@ mod tests {
 
     #[test]
     fn test_shr() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(0b00001111);
         vm.push_integer(1);
@@ -704,7 +719,7 @@ mod tests {
 
     #[test]
     fn test_unm_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
         unm(0b00000000_00000001_0_00000000_0110001, &mut vm);
@@ -714,7 +729,7 @@ mod tests {
 
     #[test]
     fn test_unm_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_number(1.0);
         unm(0b00000000_00000001_0_00000000_0110001, &mut vm);
@@ -724,7 +739,7 @@ mod tests {
 
     #[test]
     fn test_bnot() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(0b11111111);
         bnot(0b00000000_00000001_0_00000000_0110010, &mut vm);
@@ -733,7 +748,7 @@ mod tests {
     }
     #[test]
     fn test_not() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_boolean(true);
         not(0b00000000_00000001_0_00000000_0110011, &mut vm);
@@ -748,7 +763,7 @@ mod tests {
 
     #[test]
     fn test_len() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_string("hello".to_string());
         len(0b00000000_00000001_0_00000000_0110100, &mut vm);
@@ -758,7 +773,7 @@ mod tests {
 
     #[test]
     fn test_concat() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_string("hello".to_string());
         vm.push_string("world".to_string());
@@ -769,195 +784,197 @@ mod tests {
 
     #[test]
     fn test_eq() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
         vm.push_integer(1);
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         eq(0b00000000_00000001_0_00000000_0111001, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
         vm.push_integer(0);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         eq(0b00000000_00000010_0_00000001_0111001, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
     }
 
     #[test]
     fn test_lt() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
         vm.push_integer(2);
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         lt(0b00000000_00000001_0_00000000_0111010, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
         vm.push_integer(2);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         lt(0b00000000_00000010_0_00000001_0111010, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
         vm.push_integer(0);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         lt(0b00000000_00000011_0_00000001_0111010, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
     }
 
     #[test]
     fn test_le() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
         vm.push_integer(2);
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         le(0b00000000_00000001_0_00000000_0111011, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
         vm.push_integer(2);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         le(0b00000000_00000010_0_00000001_0111011, &mut vm);
-        assert!(vm.pc() == 2);
+        assert_eq!(vm.pc(), 2);
 
         vm.push_integer(0);
-        assert!(vm.pc() == 2);
+        assert_eq!(vm.pc(), 2);
         le(0b00000000_00000011_0_00000001_0111011, &mut vm);
-        assert!(vm.pc() == 2);
+        assert_eq!(vm.pc(), 2);
     }
 
     #[test]
     fn test_eq_k() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut proto = Prototype::default();
+        proto.constants.push(Constant::Integer(1));
+        proto.constants.push(Constant::Integer(1));
+        let mut vm = LuaState::new_with_proto(proto);
         vm.push_nil();
         vm.push_integer(1);
-        vm.proto.constants.push(Constant::Integer(1));
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         eq_k(0b00000000_00000000_0_00000000_0111100, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
-        vm.proto.constants.push(Constant::Integer(0));
-        assert!(vm.pc() == 1);
+        vm.push_integer(0);
+        assert_eq!(vm.pc(), 1);
         eq_k(0b00000000_00000001_0_00000001_0111100, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
     }
 
     #[test]
     fn test_eq_i() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         eq_i(0b00000000_10000000_0_00000001_0111101, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         eq_i(0b00000000_01111111_0_00000001_0111101, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
     }
 
     #[test]
     fn test_lt_i() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         lt_i(0b00000000_10000001_0_00000001_0111110, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
         vm.push_integer(2);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         lt_i(0b00000000_10000001_0_00000010_0111110, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         lt_i(0b00000000_00000000_0_00000010_111110, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
     }
 
     #[test]
     fn test_le_i() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         le_i(0b00000000_10000001_0_00000001_0111111, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
         vm.push_integer(2);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         le_i(0b00000000_10000001_0_00000010_0111111, &mut vm);
-        assert!(vm.pc() == 2);
+        assert_eq!(vm.pc(), 2);
 
         vm.push_integer(0);
-        assert!(vm.pc() == 2);
+        assert_eq!(vm.pc(), 2);
         le_i(0b00000000_01111111_0_00000010_0111111, &mut vm);
-        assert!(vm.pc() == 2);
+        assert_eq!(vm.pc(), 2);
     }
 
     #[test]
     fn test_gt_i() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         gt_i(0b00000000_01111111_0_00000001_1000000, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
         vm.push_integer(1);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         gt_i(0b00000000_10000000_0_00000010_1000000, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         gt_i(0b00000000_10000001_0_00000010_1000000, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
     }
 
     #[test]
     fn test_ge_i() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_integer(1);
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         ge_i(0b00000000_01111111_0_00000001_1000001, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
 
         vm.push_integer(1);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         ge_i(0b00000000_10000000_0_00000010_1000001, &mut vm);
-        assert!(vm.pc() == 2);
+        assert_eq!(vm.pc(), 2);
 
-        assert!(vm.pc() == 2);
+        assert_eq!(vm.pc(), 2);
         ge_i(0b00000000_10000001_0_00000010_1000001, &mut vm);
-        assert!(vm.pc() == 2);
+        assert_eq!(vm.pc(), 2);
     }
 
     #[test]
     fn test_test_set() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_boolean(true);
         vm.push_boolean(true);
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         test_set(0b00000000_00000001_1_00000000_1000010, &mut vm);
         assert!(vm.to_boolean(1) == true);
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         vm.push_boolean(false);
         test_set(0b00000000_00000011_1_00000000_1000010, &mut vm);
         assert!(vm.to_boolean(1) == true);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
     }
 
     #[test]
     fn test_test() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_nil();
         vm.push_boolean(true);
-        assert!(vm.pc() == 0);
+        assert_eq!(vm.pc(), 0);
         test(0b00000000_00000000_1_00000000_1000011, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
         vm.push_boolean(false);
         test(0b00000000_0000000_1_00000001_1000011, &mut vm);
-        assert!(vm.pc() == 1);
+        assert_eq!(vm.pc(), 1);
     }
 }

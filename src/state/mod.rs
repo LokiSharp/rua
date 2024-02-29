@@ -1,4 +1,5 @@
 mod arith_ops;
+mod closure;
 mod cmp_ops;
 mod lua_stack;
 mod lua_state;
@@ -10,7 +11,7 @@ use crate::binary::chunk::Prototype;
 pub use self::lua_state::LuaState;
 
 pub fn new_lua_state(stack_size: usize, proto: Prototype) -> LuaState {
-    LuaState::new(stack_size, proto)
+    LuaState::new_with_proto(proto)
 }
 
 #[cfg(test)]

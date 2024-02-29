@@ -14,32 +14,32 @@ pub fn jmp(i: u32, vm: &mut dyn LuaVM) {
 }
 #[cfg(test)]
 mod tests {
-    use crate::{api::LuaAPI, binary::chunk::Prototype, state::LuaState};
+    use crate::{api::LuaAPI, state::LuaState};
 
     use super::*;
     #[test]
     fn test_move() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_integer(0);
         vm.push_integer(1);
         vm.push_integer(2);
         vm.push_integer(3);
         vm.push_integer(4);
         vm.push_integer(5);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 0);
+        assert!(vm.stack_mut().get(1).to_integer().unwrap() == 0);
         _move(0b00000000_00000001_0_00000000_0000000, &mut vm);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 1);
+        assert!(vm.stack_mut().get(1).to_integer().unwrap() == 1);
         _move(0b00000000_00000101_0_00000000_0000000, &mut vm);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 5);
+        assert!(vm.stack_mut().get(1).to_integer().unwrap() == 5);
     }
 
     #[test]
     fn test_jmp() {
-        let mut vm = LuaState::new(10, Prototype::default());
-        assert_eq!(vm.pc, 0);
+        let mut vm = LuaState::new();
+        assert_eq!(vm.pc(), 0);
         jmp(0b1000000000000000000001001_0111000, &mut vm);
-        assert_eq!(vm.pc, 10);
+        assert_eq!(vm.pc(), 10);
         jmp(0b0_111111111111111111110101_0111000, &mut vm);
-        assert_eq!(vm.pc, 0);
+        assert_eq!(vm.pc(), 0);
     }
 }

@@ -90,85 +90,85 @@ mod tests {
     use super::*;
     #[test]
     fn test_for_prep_with_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_integer(0);
         vm.push_integer(10);
         vm.push_integer(2);
         vm.push_integer(0);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 0);
-        assert!(vm.stack.get(2).to_integer().unwrap() == 10);
-        assert!(vm.stack.get(3).to_integer().unwrap() == 2);
-        assert!(vm.stack.get(4).to_integer().unwrap() == 0);
+        assert!(vm.stack().get(1).to_integer().unwrap() == 0);
+        assert!(vm.stack().get(2).to_integer().unwrap() == 10);
+        assert!(vm.stack().get(3).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(4).to_integer().unwrap() == 0);
         for_prep(0b00000000000000000_00000000_1001010, &mut vm);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 0);
-        assert!(vm.stack.get(2).to_integer().unwrap() == 5);
-        assert!(vm.stack.get(3).to_integer().unwrap() == 2);
-        assert!(vm.stack.get(4).to_integer().unwrap() == 0);
+        assert!(vm.stack().get(1).to_integer().unwrap() == 0);
+        assert!(vm.stack().get(2).to_integer().unwrap() == 5);
+        assert!(vm.stack().get(3).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(4).to_integer().unwrap() == 0);
     }
 
     #[test]
     fn test_for_prep_with_number() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_number(1.1f64);
         vm.push_number(10f64);
         vm.push_number(1f64);
         vm.push_number(0f64);
-        assert!(vm.pc == 0);
-        assert!(vm.stack.get(1).to_number().unwrap() == 1.1f64);
-        assert!(vm.stack.get(2).to_number().unwrap() == 10f64);
-        assert!(vm.stack.get(3).to_number().unwrap() == 1f64);
-        assert!(vm.stack.get(4).to_number().unwrap() == 0f64);
+        assert!(vm.pc() == 0);
+        assert!(vm.stack().get(1).to_number().unwrap() == 1.1f64);
+        assert!(vm.stack().get(2).to_number().unwrap() == 10f64);
+        assert!(vm.stack().get(3).to_number().unwrap() == 1f64);
+        assert!(vm.stack().get(4).to_number().unwrap() == 0f64);
         for_prep(0b00000000000000000_00000000_1001010, &mut vm);
-        assert!(vm.pc == 0);
-        assert!(vm.stack.get(1).to_number().unwrap() == 1.1f64);
-        assert!(vm.stack.get(2).to_number().unwrap() == 10f64);
-        assert!(vm.stack.get(3).to_number().unwrap() == 1f64);
-        assert!(vm.stack.get(4).to_number().unwrap() == 1.1f64);
+        assert!(vm.pc() == 0);
+        assert!(vm.stack().get(1).to_number().unwrap() == 1.1f64);
+        assert!(vm.stack().get(2).to_number().unwrap() == 10f64);
+        assert!(vm.stack().get(3).to_number().unwrap() == 1f64);
+        assert!(vm.stack().get(4).to_number().unwrap() == 1.1f64);
     }
 
     #[test]
     fn test_for_loop_with_integer() {
-        let mut vm = LuaState::new(10, Prototype::default());
+        let mut vm = LuaState::new();
         vm.push_integer(0);
         vm.push_integer(10);
         vm.push_integer(2);
         vm.push_integer(0);
         vm.add_pc(1);
         assert!(vm.pc() == 1);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 0);
-        assert!(vm.stack.get(2).to_integer().unwrap() == 10);
-        assert!(vm.stack.get(3).to_integer().unwrap() == 2);
-        assert!(vm.stack.get(4).to_integer().unwrap() == 0);
+        assert!(vm.stack().get(1).to_integer().unwrap() == 0);
+        assert!(vm.stack().get(2).to_integer().unwrap() == 10);
+        assert!(vm.stack().get(3).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(4).to_integer().unwrap() == 0);
         for_prep(0b00000000000000000_00000000_1001010, &mut vm);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 0);
-        assert!(vm.stack.get(2).to_integer().unwrap() == 5);
-        assert!(vm.stack.get(3).to_integer().unwrap() == 2);
-        assert!(vm.stack.get(4).to_integer().unwrap() == 0);
+        assert!(vm.stack().get(1).to_integer().unwrap() == 0);
+        assert!(vm.stack().get(2).to_integer().unwrap() == 5);
+        assert!(vm.stack().get(3).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(4).to_integer().unwrap() == 0);
         for_loop(0b0_0000000000000001_00000000_1001001, &mut vm);
         assert!(vm.pc() == 0);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 2);
-        assert!(vm.stack.get(2).to_integer().unwrap() == 4);
-        assert!(vm.stack.get(3).to_integer().unwrap() == 2);
-        assert!(vm.stack.get(4).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(1).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(2).to_integer().unwrap() == 4);
+        assert!(vm.stack().get(3).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(4).to_integer().unwrap() == 2);
         for_loop(0b00000000000000000_00000000_1001001, &mut vm);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 4);
-        assert!(vm.stack.get(2).to_integer().unwrap() == 3);
-        assert!(vm.stack.get(3).to_integer().unwrap() == 2);
-        assert!(vm.stack.get(4).to_integer().unwrap() == 4);
+        assert!(vm.stack().get(1).to_integer().unwrap() == 4);
+        assert!(vm.stack().get(2).to_integer().unwrap() == 3);
+        assert!(vm.stack().get(3).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(4).to_integer().unwrap() == 4);
         for_loop(0b00000000000000000_00000000_1001001, &mut vm);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 6);
-        assert!(vm.stack.get(2).to_integer().unwrap() == 2);
-        assert!(vm.stack.get(3).to_integer().unwrap() == 2);
-        assert!(vm.stack.get(4).to_integer().unwrap() == 6);
+        assert!(vm.stack().get(1).to_integer().unwrap() == 6);
+        assert!(vm.stack().get(2).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(3).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(4).to_integer().unwrap() == 6);
         for_loop(0b00000000000000000_00000000_1001001, &mut vm);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 8);
-        assert!(vm.stack.get(2).to_integer().unwrap() == 1);
-        assert!(vm.stack.get(3).to_integer().unwrap() == 2);
-        assert!(vm.stack.get(4).to_integer().unwrap() == 8);
+        assert!(vm.stack().get(1).to_integer().unwrap() == 8);
+        assert!(vm.stack().get(2).to_integer().unwrap() == 1);
+        assert!(vm.stack().get(3).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(4).to_integer().unwrap() == 8);
         for_loop(0b00000000000000000_00000000_1001001, &mut vm);
-        assert!(vm.stack.get(1).to_integer().unwrap() == 10);
-        assert!(vm.stack.get(2).to_integer().unwrap() == 0);
-        assert!(vm.stack.get(3).to_integer().unwrap() == 2);
-        assert!(vm.stack.get(4).to_integer().unwrap() == 10);
+        assert!(vm.stack().get(1).to_integer().unwrap() == 10);
+        assert!(vm.stack().get(2).to_integer().unwrap() == 0);
+        assert!(vm.stack().get(3).to_integer().unwrap() == 2);
+        assert!(vm.stack().get(4).to_integer().unwrap() == 10);
     }
 }
