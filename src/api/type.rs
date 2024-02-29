@@ -1,41 +1,43 @@
+use super::consts::*;
+
 #[derive(Copy, Clone, PartialEq)]
 #[allow(dead_code)]
 #[repr(i8)]
 pub enum Type {
-    None = -0x01,
-    Nil = 0x00,
-    Boolean = 0x01,
-    LightUserData = 0x02,
-    Number = 0x03,
-    String = 0x04,
-    Table = 0x05,
-    Function = 0x06,
-    UserData = 0x07,
-    Thread = 0x08,
-    NumTypes = 0x09,
-    Proto = Type::NumTypes as i8 + 1,
-    DeadKey = Type::NumTypes as i8 + 2,
-    TolalTypes = Type::Proto as i8 + 2,
+    None = LUA_TNONE,
+    Nil = LUA_TNIL,
+    Boolean = LUA_TBOOLEAN,
+    LightUserData = LUA_TLIGHTUSERDATA,
+    Number = LUA_TNUMBER,
+    String = LUA_TSTRING,
+    Table = LUA_TTABLE,
+    Function = LUA_TFUNCTION,
+    UserData = LUA_TUSERDATA,
+    Thread = LUA_TTHREAD,
+    NumTypes = LUA_NUMTYPES,
+    Proto = LUA_TPROTO,
+    DeadKey = LUA_TDEADKEY,
+    TolalTypes = LUA_TOLALTYPES,
 }
 
 #[allow(dead_code)]
 impl Type {
     pub fn from_i8(value: i8) -> Option<Self> {
         match value {
-            -0x01 => Some(Type::None),
-            0x00 => Some(Type::Nil),
-            0x01 => Some(Type::Boolean),
-            0x02 => Some(Type::LightUserData),
-            0x03 => Some(Type::Number),
-            0x04 => Some(Type::String),
-            0x05 => Some(Type::Table),
-            0x06 => Some(Type::Function),
-            0x07 => Some(Type::UserData),
-            0x08 => Some(Type::Thread),
-            0x09 => Some(Type::NumTypes),
-            0x0A => Some(Type::Proto),
-            0x0B => Some(Type::DeadKey),
-            0x0C => Some(Type::TolalTypes),
+            LUA_TNONE => Some(Type::None),
+            LUA_TNIL => Some(Type::Nil),
+            LUA_TBOOLEAN => Some(Type::Boolean),
+            LUA_TLIGHTUSERDATA => Some(Type::LightUserData),
+            LUA_TNUMBER => Some(Type::Number),
+            LUA_TSTRING => Some(Type::String),
+            LUA_TTABLE => Some(Type::Table),
+            LUA_TFUNCTION => Some(Type::Function),
+            LUA_TUSERDATA => Some(Type::UserData),
+            LUA_TTHREAD => Some(Type::Thread),
+            LUA_NUMTYPES => Some(Type::NumTypes),
+            LUA_TPROTO => Some(Type::Proto),
+            LUA_TDEADKEY => Some(Type::DeadKey),
+            LUA_TOLALTYPES => Some(Type::TolalTypes),
             _ => panic!("unexpected Type value: {value:?}"),
         }
     }

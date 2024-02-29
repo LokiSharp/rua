@@ -1,3 +1,4 @@
+pub mod consts;
 mod lua_state;
 mod lua_vm;
 pub mod op;
