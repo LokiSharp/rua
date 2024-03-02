@@ -66,6 +66,8 @@ pub fn load_nil(i: u32, vm: &mut dyn LuaVM) {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
     use crate::{
         api::LuaAPI,
         binary::chunk::{Constant, Prototype},
@@ -96,7 +98,7 @@ mod tests {
     fn tets_load_k() {
         let mut proto = Prototype::default();
         proto.constants.push(Constant::Integer(2));
-        let mut vm = LuaState::new_with_proto(proto);
+        let mut vm = LuaState::new_with_proto(Rc::new(proto));
 
         vm.push_integer(0);
         load_k(0b00000000000000000_00000000_0000011, &mut vm);
@@ -109,7 +111,7 @@ mod tests {
         let mut proto = Prototype::default();
         proto.constants.push(Constant::Integer(2));
         proto.code.push(0b00000000000000000_00000000_0000000);
-        let mut vm = LuaState::new_with_proto(proto);
+        let mut vm = LuaState::new_with_proto(Rc::new(proto));
         vm.push_integer(0);
 
         load_kx(0b00000000_00000000_0_00000000_0000100, &mut vm);

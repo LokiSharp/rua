@@ -4,6 +4,7 @@ use crate::{
     api::{op::ArithOp, r#type::Type, LuaAPI, LuaVM},
     binary::chunk::{Constant, Prototype},
     state::arith_ops::arith,
+    vm::instruction::Instruction,
 };
 
 use super::{closure::Closure, lua_stack::LuaStack, lua_value::LuaValue};
@@ -24,10 +25,9 @@ impl LuaState {
         }
     }
 
-    pub fn new_with_proto(proto: Prototype) -> LuaState {
-        let p = &Rc::new(proto);
-        let closure = Rc::new(Closure::new(Rc::clone(&p)));
-        let frame = LuaStack::new(p.max_stack_size as usize, closure);
+    pub fn new_with_proto(proto: Rc<Prototype>) -> LuaState {
+        let closure = Rc::new(Closure::new(Rc::clone(&proto)));
+        let frame = LuaStack::new(proto.max_stack_size as usize, closure);
         LuaState {
             frames: vec![frame],
         }
@@ -460,6 +460,26 @@ impl LuaAPI for LuaState {
         let k = LuaValue::Integer(i);
         Self::set_table_impl(&t, k, v);
     }
+
+    fn load(&mut self, chunk: Vec<u8>, chunk_name: &str, mode: &str) -> u8 {
+        let proto = crate::binary::undump(chunk);
+        let closure = LuaValue::new_lua_closure(proto);
+        self.stack_mut().push(closure);
+        0
+    }
+
+    fn call(&mut self, nargs: usize, nresults: isize) {
+        let val = self.stack().get(-(nargs as isize + 1));
+        if let LuaValue::Function(c) = val {
+            let source = c.proto.source.clone().unwrap(); // TODO
+            let line = c.proto.line_defined;
+            let last_line = c.proto.last_line_defined;
+            println!("call {}<{},{}>", source, line, last_line);
+            self.call_lua_closure(nargs, nresults, c);
+        } else {
+            panic!("not function!");
+        }
+    }
 }
 
 impl LuaState {
@@ -479,6 +499,56 @@ impl LuaState {
             tbl.borrow_mut().put(k, v);
         } else {
             panic!("not a table!");
+        }
+    }
+
+    fn call_lua_closure(&mut self, nargs: usize, nresults: isize, c: Rc<Closure>) {
+        let nregs = c.proto.max_stack_size as usize;
+        let nparams = c.proto.num_params as usize;
+        let is_vararg = c.proto.is_vararg == 1;
+
+        // create new lua stack
+        let mut new_stack = LuaStack::new(nregs + 20, c);
+
+        // pass args, pop func
+        let mut args = self.stack_mut().pop_n(nargs);
+        self.stack_mut().pop(); // pop func
+        if nargs > nparams {
+            // varargs
+            for i in nparams..nargs {
+                new_stack.varargs.push(args.pop().unwrap());
+            }
+            if is_vararg {
+                new_stack.varargs.reverse();
+            } else {
+                new_stack.varargs.clear();
+            }
+        }
+        new_stack.push_n(args, nparams as isize);
+        new_stack.set_top(nregs as isize);
+
+        // run closure
+        self.push_frame(new_stack);
+        self.run_lua_closure();
+        new_stack = self.pop_frame();
+
+        // return results
+        if nresults != 0 {
+            let nrets = new_stack.top() as usize - nregs;
+            let results = new_stack.pop_n(nrets);
+            self.stack_mut().check(nrets);
+            self.stack_mut().push_n(results, nresults);
+        }
+    }
+
+    fn run_lua_closure(&mut self) {
+        loop {
+            let instr = self.fetch();
+            instr.execute(self);
+            // print_stack(instr.opname(), self);
+            if instr.opcode() == crate::vm::opcodes::OP_RETURN {
+                break;
+            }
         }
     }
 }

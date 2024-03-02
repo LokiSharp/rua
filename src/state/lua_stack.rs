@@ -104,6 +104,25 @@ impl LuaStack {
         }
     }
 
+    /// 设置栈顶的位置。
+    pub fn set_top(&mut self, idx: isize) {
+        let new_top = self.abs_index(idx);
+        if new_top < 0 {
+            panic!("stack underflow!");
+        }
+
+        let n = self.top() - new_top;
+        if n > 0 {
+            for _ in 0..n {
+                self.pop();
+            }
+        } else if n < 0 {
+            for _ in n..0 {
+                self.push(LuaValue::Nil);
+            }
+        }
+    }
+
     /// 反转栈中从 `from` 到 `to` 的元素。
     pub fn reverse(&mut self, mut from: usize, mut to: usize) {
         while from < to {

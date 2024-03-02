@@ -1,6 +1,10 @@
+use std::rc::Rc;
+
 use crate::binary::chunk;
 
 use crate::api::r#type::VType;
+
+use super::chunk::Prototype;
 
 pub struct Reader {
     data: Vec<u8>,
@@ -129,13 +133,13 @@ impl Reader {
         );
     }
 
-    pub fn read_proto(&mut self) -> chunk::Prototype {
+    pub fn read_proto(&mut self) -> Rc<Prototype> {
         self.read_proto0(None)
     }
 
-    fn read_proto0(&mut self, parent_source: Option<String>) -> chunk::Prototype {
+    fn read_proto0(&mut self, parent_source: Option<String>) -> Rc<Prototype> {
         let source = self.read_string0().or(parent_source);
-        chunk::Prototype {
+        Rc::new(Prototype {
             source: source.clone(), // debug
             line_defined: self.read_size(),
             last_line_defined: self.read_size(),
@@ -150,7 +154,7 @@ impl Reader {
             abs_line_info: self.read_vec(|r| r.read_abs_line_info()), // debug
             loc_vars: self.read_vec(|r| r.read_loc_var()),     // debug
             upvalue_names: self.read_vec(|r| r.read_string()), // debug
-        }
+        })
     }
 
     fn read_constant(&mut self) -> chunk::Constant {

@@ -85,7 +85,7 @@ fn is_number_for_loop(vm: &mut dyn LuaVM, a: isize) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::{api::LuaAPI, binary::chunk::Prototype, state::LuaState};
+    use crate::{api::LuaAPI, state::LuaState};
 
     use super::*;
     #[test]

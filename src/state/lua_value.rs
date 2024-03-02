@@ -5,7 +5,9 @@ use std::hash::Hasher;
 use std::rc::Rc;
 
 use crate::api::r#type::Type;
+use crate::binary::chunk::Prototype;
 
+use super::closure::Closure;
 use super::lua_table::LuaTable;
 
 #[derive(Clone)]
@@ -16,6 +18,7 @@ pub enum LuaValue {
     Integer(i64),
     Str(String),
     Table(Rc<RefCell<LuaTable>>),
+    Function(Rc<Closure>),
 }
 
 impl fmt::Debug for LuaValue {
@@ -27,6 +30,7 @@ impl fmt::Debug for LuaValue {
             LuaValue::Integer(i) => write!(f, "{}", i),
             LuaValue::Str(s) => write!(f, "{:?}", s),
             LuaValue::Table(_) => write!(f, "table"),
+            LuaValue::Function(_) => write!(f, "(function)"),
         }
     }
 }
@@ -56,6 +60,7 @@ impl Hash for LuaValue {
             LuaValue::Integer(i) => i.hash(state),
             LuaValue::Str(s) => s.hash(state),
             LuaValue::Table(t) => t.borrow().hash(state),
+            LuaValue::Function(c) => c.hash(state),
         }
     }
 }
@@ -76,6 +81,7 @@ impl LuaValue {
             LuaValue::Integer(_) => Type::Number as i8,
             LuaValue::Str(_) => Type::String as i8,
             LuaValue::Table(_) => Type::Table as i8,
+            LuaValue::Function(_) => Type::Function as i8,
         }
     }
 
@@ -107,6 +113,10 @@ impl LuaValue {
 
     pub fn new_table(narr: usize, nrec: usize) -> LuaValue {
         LuaValue::Table(Rc::new(RefCell::new(LuaTable::new(narr, nrec))))
+    }
+
+    pub fn new_lua_closure(proto: Rc<Prototype>) -> LuaValue {
+        LuaValue::Function(Rc::new(Closure::new(proto)))
     }
 }
 

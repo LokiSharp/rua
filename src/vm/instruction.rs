@@ -198,7 +198,7 @@ impl Instruction for u32 {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::Read};
+    use std::{fs::File, io::Read, rc::Rc};
 
     use crate::{
         api::{r#type::Type, LuaAPI},
@@ -220,9 +220,9 @@ mod tests {
         lua_main(proto);
     }
 
-    fn lua_main(proto: Prototype) {
+    fn lua_main(proto: Rc<Prototype>) {
         let nregs = proto.max_stack_size;
-        let mut ls = state::new_lua_state((nregs + 8) as usize, proto);
+        let mut ls = state::new_lua_state_with_proto(proto);
         ls.set_top(nregs as isize);
         loop {
             let pc = ls.pc();

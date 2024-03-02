@@ -6,11 +6,14 @@ mod lua_state;
 pub mod lua_table;
 pub mod lua_value;
 mod math;
+
+use std::rc::Rc;
+
 use crate::binary::chunk::Prototype;
 
 pub use self::lua_state::LuaState;
 
-pub fn new_lua_state(stack_size: usize, proto: Prototype) -> LuaState {
+pub fn new_lua_state_with_proto(proto: Rc<Prototype>) -> LuaState {
     LuaState::new_with_proto(proto)
 }
 
@@ -21,7 +24,7 @@ mod tests {
     use super::*;
     #[test]
     fn test_lua_state() {
-        let mut ls = new_lua_state(20, Prototype::default());
+        let mut ls = new_lua_state_with_proto(Rc::new(Prototype::default()));
         ls.push_boolean(true);
         print_stack(&ls);
         ls.push_integer(10);

@@ -2,8 +2,6 @@ use crate::api::LuaVM;
 
 use super::instruction::{Instruction, MAXARG_C};
 
-const LFIELDS_PER_FLUSH: isize = 50;
-
 // OP_NEWTABLE         A B C k             R[A] := {}
 pub fn new_table(i: u32, vm: &mut dyn LuaVM) {
     let (a, mut b, mut c, k) = (
@@ -92,7 +90,7 @@ pub fn set_list(i: u32, vm: &mut dyn LuaVM) {
 
 #[cfg(test)]
 mod tests {
-    use crate::{api::LuaAPI, binary::chunk::Prototype, state::LuaState};
+    use crate::{api::LuaAPI, state::LuaState};
 
     use super::*;
 
