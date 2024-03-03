@@ -13,6 +13,10 @@ use crate::binary::chunk::Prototype;
 
 pub use self::lua_state::LuaState;
 
+pub fn new_lua_state() -> LuaState {
+    LuaState::new()
+}
+
 pub fn new_lua_state_with_proto(proto: Rc<Prototype>) -> LuaState {
     LuaState::new_with_proto(proto)
 }

@@ -397,14 +397,12 @@ impl LuaAPI for LuaState {
 
     /// 获取 `idx` 索引处的值的长度。
     fn len(&mut self, idx: isize) {
-        let val = self.stack().get(idx);
-        match val {
-            LuaValue::Str(s) => self.stack_mut().push(LuaValue::Integer(s.len() as i64)),
-            LuaValue::Table(t) => self
-                .stack_mut()
-                .push(LuaValue::Integer(t.borrow().len() as i64)),
+        let _len = match self.stack().get(idx) {
+            LuaValue::Str(s) => s.len(),
+            LuaValue::Table(t) => t.borrow().len(),
             _ => panic!("length error!"),
-        }
+        };
+        self.stack_mut().push(LuaValue::Integer(_len as i64));
     }
 
     /// 连接栈顶的 `n` 个字符串，并将结果推送到栈顶。
@@ -500,7 +498,7 @@ impl LuaAPI for LuaState {
             println!("call {}<{},{}>", source, line, last_line);
             self.call_lua_closure(nargs, nresults, c);
         } else {
-            panic!("not function!");
+            println!("not function!");
         }
     }
 }
@@ -569,12 +567,32 @@ impl LuaState {
             let instr = self.fetch();
             instr.execute(self);
             // print_stack(instr.opname(), self);
-            if instr.opcode() == crate::vm::opcodes::OP_RETURN {
+            if instr.opcode() == crate::vm::opcodes::OP_RETURN
+                || instr.opcode() == crate::vm::opcodes::OP_RETURN0
+                || instr.opcode() == crate::vm::opcodes::OP_RETURN1
+            {
                 break;
             }
         }
     }
 }
+
+// debug
+fn print_stack(opname: &str, ls: &LuaState) {
+    print!("  {}\t", opname);
+    let top = ls.get_top();
+    for i in 1..top + 1 {
+        let t = ls.type_id(i);
+        match Type::from_i8(t) {
+            Some(Type::Boolean) => print!("[{}]", ls.to_boolean(i)),
+            Some(Type::Number) => print!("[{}]", ls.to_number(i)),
+            Some(Type::String) => print!("[{:?}]", ls.to_string(i)),
+            _ => print!("[{}]", ls.type_name(t)), // other values
+        }
+    }
+    println!("");
+}
+
 #[cfg(test)]
 mod tests {
     use crate::api::op::CmpOp;

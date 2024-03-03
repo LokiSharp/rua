@@ -17,7 +17,10 @@
 
 use crate::{
     api::LuaVM,
-    vm::{instr_for::*, instr_load::*, instr_misc::*, instr_ops::*, instr_table::*, opcodes::*},
+    vm::{
+        instr_call::*, instr_for::*, instr_load::*, instr_misc::*, instr_ops::*, instr_table::*,
+        opcodes::*,
+    },
 };
 
 use super::opcodes::OPCODES;
@@ -131,6 +134,7 @@ impl Instruction for u32 {
             OP_LFALSESKIP => load_l_false_skip(self, vm),
             OP_LOADTRUE => load_true(self, vm),
             OP_LOADNIL => load_nil(self, vm),
+            OP_GETTABUP => (),
             OP_GETTABLE => get_table(self, vm),
             OP_GETI => get_i(self, vm),
             OP_GETFIELD => get_field(self, vm),
@@ -138,6 +142,7 @@ impl Instruction for u32 {
             OP_SETI => set_i(self, vm),
             OP_SETFIELD => set_field(self, vm),
             OP_NEWTABLE => new_table(self, vm),
+            OP_SELF => _self(self, vm),
             OP_ADDI => add_i(self, vm),
             OP_ADDK => add_k(self, vm),
             OP_SUBK => sub_k(self, vm),
@@ -183,9 +188,15 @@ impl Instruction for u32 {
             OP_GEI => ge_i(self, vm),
             OP_TEST => test(self, vm),
             OP_SETLIST => set_list(self, vm),
+            OP_CALL => call(self, vm),
+            OP_TAILCALL => tail_call(self, vm),
+            OP_RETURN => _return(self, vm),
+            OP_RETURN0 => return0(self, vm),
             OP_FORLOOP => for_loop(self, vm),
             OP_FORPREP => for_prep(self, vm),
             OP_TESTSET => test_set(self, vm),
+            OP_CLOSURE => closure(self, vm),
+            OP_VARARG => vararg(self, vm),
             OP_VARARGPREP => {}
             OP_EXTRAARG => {}
             _ => {
@@ -198,56 +209,20 @@ impl Instruction for u32 {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::Read, rc::Rc};
+    use std::{fs::File, io::Read};
 
-    use crate::{
-        api::{r#type::Type, LuaAPI},
-        binary::{self, chunk::Prototype},
-        state::{self, LuaState},
-        vm::opcodes,
-    };
-
-    use super::*;
+    use crate::{api::LuaAPI, state};
 
     #[test]
     fn test_instruction() {
-        let mut file = File::open("lua/table.luac").expect("Failed to open file");
+        let filename = "lua/call.luac".to_string();
+        let mut file = File::open(&filename).expect("Failed to open file");
 
         let mut data = Vec::new();
         let _ = file.read_to_end(&mut data);
 
-        let proto = binary::undump(data);
-        lua_main(proto);
-    }
-
-    fn lua_main(proto: Rc<Prototype>) {
-        let nregs = proto.max_stack_size;
-        let mut ls = state::new_lua_state_with_proto(proto);
-        ls.set_top(nregs as isize);
-        loop {
-            let pc = ls.pc();
-            let instr = ls.fetch();
-            if instr.opcode() != opcodes::OP_RETURN {
-                instr.execute(&mut ls);
-                print!("[{:04}] {} \t", pc + 1, instr.opname());
-                print_stack(&ls);
-            } else {
-                break;
-            }
-        }
-    }
-
-    fn print_stack(ls: &LuaState) {
-        let top = ls.get_top();
-        for i in 1..top + 1 {
-            let t = ls.type_id(i);
-            match Type::from_i8(t) {
-                Some(Type::Boolean) => print!("[{}]", ls.to_boolean(i)),
-                Some(Type::Number) => print!("[{}]", ls.to_number(i)),
-                Some(Type::String) => print!("[{:?}]", ls.to_string(i)),
-                _ => print!("[{}]", ls.type_name(t)), // other values
-            }
-        }
-        println!("");
+        let mut ls = state::new_lua_state();
+        ls.load(data, &filename, "b");
+        ls.call(0, 0);
     }
 }

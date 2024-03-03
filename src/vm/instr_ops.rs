@@ -45,7 +45,7 @@ fn unary_arith(i: u32, vm: &mut dyn LuaVM, op: u8) {
 
 //                    if ((R[A] op R[B]) ~= k) then pc++
 fn compare(i: u32, vm: &mut dyn LuaVM, op: u8) {
-    let (a, b, k) = (i.get_arg_a() + 1, i.get_arg_b() + 1, i.get_arg_k());
+    let (a, b, k) = (i.get_arg_a(), i.get_arg_b(), i.get_arg_k());
     vm.get_rk(a);
     vm.get_rk(b);
     if vm.compare(-2, -1, op) != (k != 0) {
@@ -787,7 +787,6 @@ mod tests {
     #[test]
     fn test_eq() {
         let mut vm = LuaState::new();
-        vm.push_nil();
         vm.push_integer(1);
         vm.push_integer(1);
         assert_eq!(vm.pc(), 0);
@@ -803,7 +802,6 @@ mod tests {
     #[test]
     fn test_lt() {
         let mut vm = LuaState::new();
-        vm.push_nil();
         vm.push_integer(1);
         vm.push_integer(2);
         assert_eq!(vm.pc(), 0);
@@ -824,7 +822,6 @@ mod tests {
     #[test]
     fn test_le() {
         let mut vm = LuaState::new();
-        vm.push_nil();
         vm.push_integer(1);
         vm.push_integer(2);
         assert_eq!(vm.pc(), 0);

@@ -45,6 +45,11 @@ pub fn _return(i: u32, vm: &mut dyn LuaVM) {
     }
 }
 
+// OP_RETURN0                              return
+pub fn return0(_i: u32, _vm: &mut dyn LuaVM) {
+    // no results
+}
+
 // OP_CLOSURE          A Bx                R[A] := closure(KPROTO[Bx])
 pub fn closure(i: u32, vm: &mut dyn LuaVM) {
     let (a, bx) = (i.get_arg_a() + 1, i.get_arg_bx());
@@ -55,8 +60,10 @@ pub fn closure(i: u32, vm: &mut dyn LuaVM) {
 // OP_VARARG           A C                 R[A], R[A+1], ..., R[A+C-2] = vararg
 pub fn vararg(i: u32, vm: &mut dyn LuaVM) {
     let (a, c) = (i.get_arg_a() + 1, i.get_arg_c());
-    vm.load_vararg(c);
-    vm.replace(a);
+    if c != 1 {
+        vm.load_vararg(c - 1);
+        pop_results(a, c, vm);
+    }
 }
 
 fn push_func_and_args(a: isize, b: isize, vm: &mut dyn LuaVM) -> usize {
@@ -122,9 +129,8 @@ mod tests {
     #[test]
     fn test_vararg() {
         let mut vm = LuaState::new();
-        vm.push_nil();
         vm.stack_mut().varargs.push(LuaValue::Integer(1));
-        vararg(0b00000001_00000000_0_00000000_1010000, &mut vm);
+        vararg(0b00000000_00000000_0_00000000_1010000, &mut vm);
         assert_eq!(vm.to_integer(1), 1);
     }
 }
