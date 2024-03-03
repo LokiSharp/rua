@@ -11,7 +11,6 @@ use super::{closure::Closure, lua_stack::LuaStack, lua_value::LuaValue};
 
 const LUA_RIDX_GLOBALS: LuaValue = LuaValue::Integer(crate::api::consts::LUA_RIDX_GLOBALS as i64);
 
-/// `LuaState` 是一个用于表示 Lua 状态的结构体。
 #[derive(Debug)]
 pub struct LuaState {
     pub(crate) registry: LuaValue,
@@ -61,24 +60,20 @@ impl LuaState {
 }
 
 impl LuaVM for LuaState {
-    /// 获取当前的程序计数器（pc）的值。
     fn pc(&self) -> isize {
         self.stack().pc
     }
 
-    /// 将程序计数器（pc）增加指定的值。
     fn add_pc(&mut self, n: isize) {
         self.stack_mut().pc += n;
     }
 
-    /// 获取当前程序计数器（pc）指向的指令，并将程序计数器（pc）向前移动一位。
     fn fetch(&mut self) -> u32 {
         let i = self.stack().closure.proto.code[self.pc() as usize];
         self.stack_mut().pc += 1;
         i
     }
 
-    /// 获取指定索引的常量，并将其推送到栈顶。
     fn get_const(&mut self, idx: isize) {
         let c = &self.stack().closure.proto.constants[idx as usize];
         let val = match c {
@@ -91,11 +86,6 @@ impl LuaVM for LuaState {
         self.stack_mut().push(val);
     }
 
-    /// 获取指定的 RK 值。
-    ///
-    /// 如果 RK 值大于 0xFF，那么它是一个常量索引，此时将获取该常量并推送到栈顶；
-    /// 否则，它是一个寄存器索引，此时将推送该寄存器的值到栈顶。
-    ///
     fn get_rk(&mut self, rk: isize) {
         if rk > 0xFF {
             self.get_const(rk & 0xFF);
@@ -104,14 +94,12 @@ impl LuaVM for LuaState {
         }
     }
 
-    /// 从当前栈的闭包中加载指定索引的原型，并将其封装为一个新的闭包，然后将这个闭包推送到栈上。
     fn load_proto(&mut self, idx: usize) {
         let proto = self.stack().closure.proto.protos[idx].clone();
         let closure = LuaValue::new_lua_closure(proto);
         self.stack_mut().push(closure);
     }
 
-    /// 加载变长参数（vararg）到栈上。
     fn load_vararg(&mut self, mut n: isize) {
         if n < 0 {
             n = self.stack().varargs.len() as isize;
@@ -122,66 +110,55 @@ impl LuaVM for LuaState {
         self.stack_mut().push_n(varargs, n);
     }
 
-    /// 返回当前栈的闭包需要的寄存器数量。
     fn register_count(&self) -> usize {
         self.stack().closure.proto.max_stack_size as usize
     }
 }
 
 impl LuaAPI for LuaState {
-    /// 获取栈顶的索引。
     fn get_top(&self) -> isize {
         self.stack().top()
     }
 
-    /// 将一个相对索引转换为绝对索引。
     fn abs_index(&self, idx: isize) -> isize {
         self.stack().abs_index(idx)
     }
 
-    /// 检查栈是否有足够的空间来存储 `n` 个元素，如果没有则分配更多的空间。
     fn check_stack(&mut self, n: usize) -> bool {
         self.stack_mut().check(n);
         true
     }
 
-    /// 从栈顶弹出 `n` 个值。
     fn pop(&mut self, n: usize) {
         for _ in 0..n {
             self.stack_mut().pop();
         }
     }
 
-    /// 将 `from_idx` 索引处的值复制到 `to_idx` 索引处。
     fn copy(&mut self, from_idx: isize, to_idx: isize) {
         let val = self.stack().get(from_idx);
         self.stack_mut().set(to_idx, val);
     }
 
-    /// 将 `idx` 索引处的值推送到栈顶。
     fn push_value(&mut self, idx: isize) {
         let val = self.stack().get(idx);
         self.stack_mut().push(val);
     }
 
-    /// 用栈顶的值替换 `idx` 索引处的值。
     fn replace(&mut self, idx: isize) {
         let val = self.stack_mut().pop();
         self.stack_mut().set(idx, val);
     }
 
-    /// 在 `idx` 索引处插入一个值，该值是栈顶的值。
     fn insert(&mut self, idx: isize) {
         self.rotate(idx, 1);
     }
 
-    /// 移除 `idx` 索引处的值。
     fn remove(&mut self, idx: isize) {
         self.rotate(idx, -1);
         self.pop(1);
     }
 
-    /// 旋转栈中从 `idx` 开始的 `n` 个元素。
     fn rotate(&mut self, idx: isize, n: isize) {
         let abs_idx = self.stack().abs_index(idx);
         if abs_idx < 0 || !self.stack().is_valid(abs_idx) {
@@ -196,7 +173,6 @@ impl LuaAPI for LuaState {
         self.stack_mut().reverse(p as usize, t as usize); /* reverse the entire segment */
     }
 
-    /// 设置栈顶的索引。
     fn set_top(&mut self, idx: isize) {
         let new_top = self.stack().abs_index(idx);
         if new_top < 0 {
@@ -215,7 +191,6 @@ impl LuaAPI for LuaState {
         }
     }
 
-    /// 获取 `tp` 类型的名称。
     fn type_name(&self, tp: i8) -> &str {
         match Type::from_i8(tp) {
             Some(Type::None) => "no value",
@@ -236,7 +211,6 @@ impl LuaAPI for LuaState {
         }
     }
 
-    /// 获取 `idx` 索引处的值的类型 ID。
     fn type_id(&self, idx: isize) -> i8 {
         if self.stack().is_valid(idx) {
             let i = self.stack().get(idx);
@@ -246,27 +220,22 @@ impl LuaAPI for LuaState {
         }
     }
 
-    /// 检查 `idx` 索引处的值是否为 `None` 类型。
     fn is_none(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::None as i8
     }
 
-    /// 检查 `idx` 索引处的值是否为 `Nil` 类型。
     fn is_nil(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::Nil as i8
     }
 
-    /// 检查 `idx` 索引处的值是否为 `None` 或 `Nil` 类型。
     fn is_none_or_nil(&self, idx: isize) -> bool {
         self.is_none(idx) || self.is_nil(idx)
     }
 
-    /// 检查 `idx` 索引处的值是否为布尔类型。
     fn is_boolean(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::Boolean as i8
     }
 
-    /// 检查 `idx` 索引处的值是否为整数类型。
     fn is_integer(&self, idx: isize) -> bool {
         match self.stack().get(idx) {
             LuaValue::Integer(_) => true,
@@ -274,33 +243,27 @@ impl LuaAPI for LuaState {
         }
     }
 
-    /// 检查 `idx` 索引处的值是否为数字类型。
     fn is_number(&self, idx: isize) -> bool {
         self.to_numberx(idx).is_some()
     }
 
-    /// 检查 `idx` 索引处的值是否为字符串类型。
     fn is_string(&self, idx: isize) -> bool {
         let t = self.type_id(idx);
         t == Type::String as i8 || t == Type::Number as i8
     }
 
-    /// 检查 `idx` 索引处的值是否为表类型。
     fn is_table(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::Table as i8
     }
 
-    /// 检查 `idx` 索引处的值是否为线程类型。
     fn is_thread(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::Thread as i8
     }
 
-    /// 检查 `idx` 索引处的值是否为函数类型。
     fn is_function(&self, idx: isize) -> bool {
         self.type_id(idx) == Type::Function as i8
     }
 
-    /// 检查 `idx` 索引处的值是否为 rust 函数类型。
     fn is_rust_function(&self, idx: isize) -> bool {
         match self.stack().get(idx) {
             LuaValue::Function(c) => c.rust_fn.is_some(),
@@ -308,17 +271,14 @@ impl LuaAPI for LuaState {
         }
     }
 
-    /// 将 `idx` 索引处的值转换为布尔值。
     fn to_boolean(&self, idx: isize) -> bool {
         self.stack().get(idx).to_boolean()
     }
 
-    /// 将 `idx` 索引处的值转换为整数。
     fn to_integer(&self, idx: isize) -> i64 {
         self.to_integerx(idx).unwrap()
     }
 
-    /// 尝试将 `idx` 索引处的值转换为整数，如果转换失败则返回 `None`。
     fn to_integerx(&self, idx: isize) -> Option<i64> {
         match self.stack().get(idx) {
             LuaValue::Integer(n) => Some(n),
@@ -326,12 +286,10 @@ impl LuaAPI for LuaState {
         }
     }
 
-    /// 将 `idx` 索引处的值转换为数字。
     fn to_number(&self, idx: isize) -> f64 {
         self.to_numberx(idx).unwrap()
     }
 
-    /// 尝试将 `idx` 索引处的值转换为数字，如果转换失败则返回 `None`。
     fn to_numberx(&self, idx: isize) -> Option<f64> {
         match self.stack().get(idx) {
             LuaValue::Number(n) => Some(n),
@@ -340,12 +298,10 @@ impl LuaAPI for LuaState {
         }
     }
 
-    /// 将 `idx` 索引处的值转换为字符串。
     fn to_string(&self, idx: isize) -> String {
         self.to_stringx(idx).unwrap()
     }
 
-    /// 尝试将 `idx` 索引处的值转换为字符串，如果转换失败则返回 `None`。
     fn to_stringx(&self, idx: isize) -> Option<String> {
         match self.stack().get(idx) {
             LuaValue::Str(s) => Some(s),
@@ -355,7 +311,6 @@ impl LuaAPI for LuaState {
         }
     }
 
-    /// 将 `idx` 索引处的值转换为 rust 函数。
     fn to_rust_function(&self, idx: isize) -> Option<RustFn> {
         match self.stack().get(idx) {
             LuaValue::Function(c) => c.rust_fn,
@@ -363,32 +318,26 @@ impl LuaAPI for LuaState {
         }
     }
 
-    /// 将一个 `Nil` 值推送到栈顶。
     fn push_nil(&mut self) {
         self.stack_mut().push(LuaValue::Nil);
     }
 
-    /// 将一个布尔值推送到栈顶。
     fn push_boolean(&mut self, b: bool) {
         self.stack_mut().push(LuaValue::Boolean(b));
     }
 
-    /// 将一个整数推送到栈顶。
     fn push_integer(&mut self, n: i64) {
         self.stack_mut().push(LuaValue::Integer(n));
     }
 
-    /// 将一个数字推送到栈顶。
     fn push_number(&mut self, n: f64) {
         self.stack_mut().push(LuaValue::Number(n));
     }
 
-    /// 将一个字符串推送到栈顶。
     fn push_string(&mut self, s: String) {
         self.stack_mut().push(LuaValue::Str(s));
     }
 
-    /// 将一个 rust 函数推送到栈顶。
     fn push_rust_function(&mut self, f: RustFn) {
         self.stack_mut().push(LuaValue::new_rust_closure(f));
     }
@@ -400,7 +349,6 @@ impl LuaAPI for LuaState {
         }
     }
 
-    /// 对栈顶的两个元素进行算术运算，并将结果推送到栈顶。
     fn arith(&mut self, op: u8) {
         if op != ArithOp::UNM as u8 && op != ArithOp::BNOT as u8 {
             let b = self.stack_mut().pop();
@@ -419,7 +367,6 @@ impl LuaAPI for LuaState {
         panic!("arithmetic error!");
     }
 
-    /// 比较 `idx1` 和 `idx2` 索引处的两个值。
     fn compare(&mut self, idx1: isize, idx2: isize, op: u8) -> bool {
         if !self.stack().is_valid(idx1) || !self.stack().is_valid(idx2) {
             return false;
@@ -433,7 +380,6 @@ impl LuaAPI for LuaState {
         }
     }
 
-    /// 获取 `idx` 索引处的值的长度。
     fn len(&mut self, idx: isize) {
         let _len = match self.stack().get(idx) {
             LuaValue::Str(s) => s.len(),
@@ -443,7 +389,6 @@ impl LuaAPI for LuaState {
         self.stack_mut().push(LuaValue::Integer(_len as i64));
     }
 
-    /// 连接栈顶的 `n` 个字符串，并将结果推送到栈顶。
     fn concat(&mut self, n: isize) {
         if n == 0 {
             self.stack_mut().push(LuaValue::Str("".to_string()));
@@ -464,39 +409,33 @@ impl LuaAPI for LuaState {
         // n == 1, do nothing
     }
 
-    /// 创建一个新的空表，并将其推送到栈顶。
     fn new_table(&mut self) {
         self.create_table(0, 0);
     }
 
-    /// 创建一个新的指定容量的空表，并将其推送到栈顶。
     fn create_table(&mut self, narr: usize, nrec: usize) {
         let t = LuaValue::new_table(narr, nrec);
         self.stack_mut().push(t);
     }
 
-    /// 从栈顶弹出一个键，然后从栈顶弹出一个表，然后将该键对应的值推送到栈顶。
     fn get_table(&mut self, idx: isize) -> i8 {
         let t = self.stack().get(idx);
         let k = self.stack_mut().pop();
         self.get_table_impl(&t, &k)
     }
 
-    /// 从栈顶弹出一个键，然后从栈顶弹出一个表，然后将该键对应的值推送到栈顶。
     fn get_field(&mut self, idx: isize, k: &str) -> i8 {
         let t = self.stack().get(idx);
         let k = LuaValue::Str(k.to_string());
         self.get_table_impl(&t, &k)
     }
 
-    /// 从栈顶弹出一个键，然后从栈顶弹出一个表，然后将该键对应的值推送到栈顶。
     fn get_i(&mut self, idx: isize, i: i64) -> i8 {
         let t = self.stack().get(idx);
         let k = LuaValue::Integer(i);
         self.get_table_impl(&t, &k)
     }
 
-    /// 将栈顶的值弹出，并将其设置为表的值。
     fn set_table(&mut self, idx: isize) {
         let t = self.stack().get(idx);
         let v = self.stack_mut().pop();
@@ -504,7 +443,6 @@ impl LuaAPI for LuaState {
         Self::set_table_impl(&t, k, v);
     }
 
-    /// 将栈顶的值弹出，并将其设置为表的值。
     fn set_field(&mut self, idx: isize, k: &str) {
         let t = self.stack().get(idx);
         let v = self.stack_mut().pop();
@@ -512,7 +450,6 @@ impl LuaAPI for LuaState {
         Self::set_table_impl(&t, k, v);
     }
 
-    /// 将栈顶的值弹出，并将其设置为表的值。
     fn set_i(&mut self, idx: isize, i: i64) {
         let t = self.stack().get(idx);
         let v = self.stack_mut().pop();
