@@ -93,6 +93,29 @@ impl LuaVM for LuaState {
             self.push_value(rk + 1);
         }
     }
+
+    /// 从当前栈的闭包中加载指定索引的原型，并将其封装为一个新的闭包，然后将这个闭包推送到栈上。
+    fn load_proto(&mut self, idx: usize) {
+        let proto = self.stack().closure.proto.protos[idx].clone();
+        let closure = LuaValue::new_lua_closure(proto);
+        self.stack_mut().push(closure);
+    }
+
+    /// 加载变长参数（vararg）到栈上。
+    fn load_vararg(&mut self, mut n: isize) {
+        if n < 0 {
+            n = self.stack().varargs.len() as isize;
+        }
+
+        let varargs = self.stack().varargs.clone();
+        self.stack_mut().check(n as usize);
+        self.stack_mut().push_n(varargs, n);
+    }
+
+    /// 返回当前栈的闭包需要的寄存器数量。
+    fn register_count(&self) -> usize {
+        self.stack().closure.proto.max_stack_size as usize
+    }
 }
 
 impl LuaAPI for LuaState {

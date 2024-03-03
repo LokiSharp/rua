@@ -1,3 +1,4 @@
+pub mod instr_call;
 pub mod instr_for;
 pub mod instr_load;
 pub mod instr_misc;
