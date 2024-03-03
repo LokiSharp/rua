@@ -19,7 +19,7 @@ use crate::{
     api::LuaVM,
     vm::{
         instr_call::*, instr_for::*, instr_load::*, instr_misc::*, instr_ops::*, instr_table::*,
-        opcodes::*,
+        instr_upval::*, opcodes::*,
     },
 };
 
@@ -134,7 +134,7 @@ impl Instruction for u32 {
             OP_LFALSESKIP => load_l_false_skip(self, vm),
             OP_LOADTRUE => load_true(self, vm),
             OP_LOADNIL => load_nil(self, vm),
-            OP_GETTABUP => (),
+            OP_GETTABUP => get_tab_up(self, vm),
             OP_GETTABLE => get_table(self, vm),
             OP_GETI => get_i(self, vm),
             OP_GETFIELD => get_field(self, vm),
@@ -211,18 +211,40 @@ impl Instruction for u32 {
 mod tests {
     use std::{fs::File, io::Read};
 
-    use crate::{api::LuaAPI, state};
+    use crate::{
+        api::LuaAPI,
+        state::{self},
+    };
 
     #[test]
     fn test_instruction() {
-        let filename = "lua/call.luac".to_string();
+        let filename = "lua/hello_world.luac".to_string();
         let mut file = File::open(&filename).expect("Failed to open file");
 
         let mut data = Vec::new();
         let _ = file.read_to_end(&mut data);
 
         let mut ls = state::new_lua_state();
+        ls.register("print", print);
         ls.load(data, &filename, "b");
         ls.call(0, 0);
+    }
+
+    fn print(ls: &dyn LuaAPI) -> usize {
+        let nargs = ls.get_top();
+        for i in 1..(nargs + 1) {
+            if ls.is_boolean(i) {
+                print!("{}", ls.to_boolean(i));
+            } else if ls.is_string(i) {
+                print!("{}", ls.to_string(i));
+            } else {
+                print!("{}", ls.type_name(ls.type_id(i)));
+            }
+            if i < nargs {
+                print!("\t")
+            }
+        }
+        println!("");
+        return 0;
     }
 }

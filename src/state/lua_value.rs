@@ -5,6 +5,7 @@ use std::hash::Hasher;
 use std::rc::Rc;
 
 use crate::api::r#type::Type;
+use crate::api::RustFn;
 use crate::binary::chunk::Prototype;
 
 use super::closure::Closure;
@@ -25,11 +26,11 @@ impl fmt::Debug for LuaValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             LuaValue::Nil => write!(f, "nil"),
-            LuaValue::Boolean(b) => write!(f, "{}", b),
-            LuaValue::Number(n) => write!(f, "{}", n),
-            LuaValue::Integer(i) => write!(f, "{}", i),
-            LuaValue::Str(s) => write!(f, "{:?}", s),
-            LuaValue::Table(_) => write!(f, "table"),
+            LuaValue::Boolean(b) => write!(f, "({})", b),
+            LuaValue::Number(n) => write!(f, "({})", n),
+            LuaValue::Integer(i) => write!(f, "({})", i),
+            LuaValue::Str(s) => write!(f, "({})", s),
+            LuaValue::Table(_) => write!(f, "(table)"),
             LuaValue::Function(_) => write!(f, "(function)"),
         }
     }
@@ -44,6 +45,7 @@ impl PartialEq for LuaValue {
             (LuaValue::Integer(i1), LuaValue::Integer(i2)) => i1 == i2,
             (LuaValue::Str(s1), LuaValue::Str(s2)) => s1 == s2,
             (LuaValue::Table(t1), LuaValue::Table(t2)) => Rc::ptr_eq(t1, t2),
+            (LuaValue::Function(t1), LuaValue::Function(t2)) => Rc::ptr_eq(t1, t2),
             _ => false,
         }
     }
@@ -116,7 +118,11 @@ impl LuaValue {
     }
 
     pub fn new_lua_closure(proto: Rc<Prototype>) -> LuaValue {
-        LuaValue::Function(Rc::new(Closure::new(proto)))
+        LuaValue::Function(Rc::new(Closure::new_lua_closure(proto)))
+    }
+
+    pub fn new_rust_closure(f: RustFn) -> LuaValue {
+        LuaValue::Function(Rc::new(Closure::new_rust_closure(f)))
     }
 }
 

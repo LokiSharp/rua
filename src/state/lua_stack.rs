@@ -1,11 +1,14 @@
 use std::rc::Rc;
 
+use crate::api::consts::LUA_REGISTRYINDEX;
+
 use super::{closure::Closure, lua_value::LuaValue};
 
 /// `LuaStack` 是一个用于操作 Lua 栈的结构体。
 #[derive(Debug)]
 pub struct LuaStack {
     vec: Vec<LuaValue>,
+    registry: LuaValue,
     pub closure: Rc<Closure>,
     pub varargs: Vec<LuaValue>,
     pub pc: isize,
@@ -13,9 +16,21 @@ pub struct LuaStack {
 
 impl LuaStack {
     /// 创建一个新的 `LuaStack`，预分配指定大小的空间。
-    pub fn new(size: usize, closure: Rc<Closure>) -> Self {
+    pub fn new(size: usize, registry: LuaValue, closure: Rc<Closure>) -> Self {
         LuaStack {
             vec: Vec::with_capacity(size),
+            registry: registry,
+            closure: closure,
+            varargs: Vec::new(),
+            pc: 0,
+        }
+    }
+
+    pub fn new_for_test(size: usize, closure: Rc<Closure>) -> Self {
+        let registry = LuaValue::new_table(0, 0);
+        LuaStack {
+            vec: Vec::with_capacity(size),
+            registry: registry,
             closure: closure,
             varargs: Vec::new(),
             pc: 0,
@@ -69,7 +84,7 @@ impl LuaStack {
 
     /// 将一个相对索引转换为绝对索引。
     pub fn abs_index(&self, idx: isize) -> isize {
-        if idx >= 0 {
+        if idx >= 0 || idx <= LUA_REGISTRYINDEX {
             idx
         } else {
             idx + self.top() + 1
@@ -78,12 +93,18 @@ impl LuaStack {
 
     /// 检查一个索引是否有效。
     pub fn is_valid(&self, idx: isize) -> bool {
+        if idx == LUA_REGISTRYINDEX {
+            return true;
+        }
         let abs_idx = self.abs_index(idx);
         abs_idx > 0 && abs_idx <= self.top()
     }
 
     /// 获取指定索引的值。
     pub fn get(&self, idx: isize) -> LuaValue {
+        if idx == LUA_REGISTRYINDEX {
+            return self.registry.clone();
+        }
         let abs_idx = self.abs_index(idx);
         if abs_idx > 0 && abs_idx <= self.top() {
             let idx = abs_idx as usize - 1;
@@ -95,6 +116,10 @@ impl LuaStack {
 
     /// 设置指定索引的值。
     pub fn set(&mut self, idx: isize, val: LuaValue) {
+        if idx == LUA_REGISTRYINDEX {
+            self.registry = val;
+            return;
+        }
         let abs_idx = self.abs_index(idx);
         if abs_idx > 0 && abs_idx <= self.top() {
             let idx = abs_idx as usize - 1;
@@ -138,13 +163,14 @@ mod tests {
     use super::*;
     #[test]
     fn test_new() {
-        let stack = LuaStack::new(10, Rc::new(Closure::new(Rc::new(Default::default()))));
+        let stack = LuaStack::new_for_test(10, Rc::new(Closure::new(Rc::new(Default::default()))));
         assert_eq!(stack.top(), 0);
     }
 
     #[test]
     fn test_push_and_pop() {
-        let mut stack = LuaStack::new(10, Rc::new(Closure::new(Rc::new(Default::default()))));
+        let mut stack =
+            LuaStack::new_for_test(10, Rc::new(Closure::new(Rc::new(Default::default()))));
         stack.push(LuaValue::Number(42.0));
         assert_eq!(stack.top(), 1);
         stack.pop();
@@ -153,7 +179,8 @@ mod tests {
 
     #[test]
     fn test_push_and_pop_n() {
-        let mut stack = LuaStack::new(10, Rc::new(Closure::new(Rc::new(Default::default()))));
+        let mut stack =
+            LuaStack::new_for_test(10, Rc::new(Closure::new(Rc::new(Default::default()))));
         stack.push_n(
             vec![
                 LuaValue::Number(0.0),
@@ -169,14 +196,15 @@ mod tests {
 
     #[test]
     fn test_abs_index() {
-        let stack = LuaStack::new(10, Rc::new(Closure::new(Rc::new(Default::default()))));
+        let stack = LuaStack::new_for_test(10, Rc::new(Closure::new(Rc::new(Default::default()))));
         assert_eq!(stack.abs_index(1), 1);
         assert_eq!(stack.abs_index(-1), 0);
     }
 
     #[test]
     fn test_is_valid() {
-        let mut stack = LuaStack::new(10, Rc::new(Closure::new(Rc::new(Default::default()))));
+        let mut stack =
+            LuaStack::new_for_test(10, Rc::new(Closure::new(Rc::new(Default::default()))));
         stack.push(LuaValue::Boolean(true));
         assert_eq!(stack.is_valid(1), true);
         assert_eq!(stack.is_valid(2), false);
@@ -186,7 +214,8 @@ mod tests {
 
     #[test]
     fn test_get_and_set() {
-        let mut stack = LuaStack::new(10, Rc::new(Closure::new(Rc::new(Default::default()))));
+        let mut stack =
+            LuaStack::new_for_test(10, Rc::new(Closure::new(Rc::new(Default::default()))));
         stack.push(LuaValue::Str("hello".to_string()));
         stack.push(LuaValue::Number(42.0));
         assert_eq!(stack.get(1), LuaValue::Str("hello".to_string()));
@@ -199,7 +228,8 @@ mod tests {
 
     #[test]
     fn test_reverse() {
-        let mut stack = LuaStack::new(10, Rc::new(Closure::new(Rc::new(Default::default()))));
+        let mut stack =
+            LuaStack::new_for_test(10, Rc::new(Closure::new(Rc::new(Default::default()))));
         stack.push(LuaValue::Number(1.0));
         stack.push(LuaValue::Number(2.0));
         stack.push(LuaValue::Number(3.0));

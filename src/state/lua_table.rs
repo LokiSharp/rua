@@ -2,7 +2,7 @@ use std::{collections::HashMap, hash::Hash};
 
 use crate::state::lua_value::LuaValue;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct LuaTable {
     arr: Vec<LuaValue>,
     map: HashMap<LuaValue, LuaValue>,

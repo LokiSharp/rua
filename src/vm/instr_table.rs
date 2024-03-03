@@ -72,12 +72,7 @@ pub fn set_field(i: u32, vm: &mut dyn LuaVM) {
 
 // OP_SETLIST          A B C k             R[A][C+i] := R[A+i], 1 <= i <= B
 pub fn set_list(i: u32, vm: &mut dyn LuaVM) {
-    let (a, mut b, c, k) = (
-        i.get_arg_a() + 1,
-        i.get_arg_b(),
-        i.get_arg_c(),
-        i.get_arg_k(),
-    );
+    let (a, mut b, c) = (i.get_arg_a() + 1, i.get_arg_b(), i.get_arg_c());
 
     let b_is_zero = b == 0;
     if b_is_zero {
